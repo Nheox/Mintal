@@ -65,6 +65,11 @@ export ANDROID_HOME=/opt/android-sdk
 ./gradlew testDebugUnitTest --tests "*ScreenshotTest*"   # PNGs → app/build/screenshots/
 ```
 
+The screenshot tests are the only way to see the UI here, and they are worth running on
+any art or chart change: `species-sheet-*` (all twelve mints), `grove-bed-*` (a mixed
+bed), `grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `charts-focus-*` and
+`charts-rating-*` (the statistics axes at the sizes that broke them).
+
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
 
@@ -92,9 +97,15 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - `SessionController` is the heart: a state machine over a `SessionStore` interface and an
   injected clock, so it is fully unit-testable. Keep it that way.
 - The Grove is a *rendering*, not a table: `GroveLayoutBuilder` turns the session list into
-  geometry deterministically, seeded by session id, so it never reshuffles between launches.
-- Unlock state is derived from one `SUM` over successful sessions and only cached. Never
-  treat the `species` table as the source of truth.
+  a bed of plants deterministically, seeded by session id, so it never reshuffles between
+  launches. One successful session is one **node** (stem segment + opposite leaf pair) on
+  that species' youngest unfinished plant; at twelve nodes a plant is mature and the next
+  session starts a new one beside it. `PlantBuilder` owns that structure and is pure.
+- Unlocks have **two** sources of truth, and the split is the thing to keep hold of:
+  *how many* mints are unlocked is derived from one `SUM` over successful sessions and
+  never stored; *which* ones is the player's choice at each milestone, and that is the one
+  fact the `species` table holds. Never auto-stamp a species — `MintalApplication` and the
+  backup restore used to, and must not again.
 
 ## Hard constraints
 
@@ -122,6 +133,18 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - Rows of chips/buttons must be `FlowRow`, or they run off the edge in a multi-window pane.
 - Dates are forced to `Locale.ENGLISH` while the UI copy is English-only. Revisit when
   strings are translated.
+- Material 3's `Surface` propagates min constraints to its child, so `Modifier.height(x)`
+  on that child does nothing. A screenshot test that renders a band inside a `Surface`
+  silently gets a full-screen band and flatters the layout; wrap it in a `Column`.
+- Mint is **decussate**: each leaf pair is turned ~90° from the one below, so every second
+  pair projects edge-on. Drawing them all flat is what made the plants read as a generic
+  herb. Branches come out of leaf axils, never mid-internode.
+- Leaf size is relative to the plant's own internode (`Plant.segmentUnit`), not to the
+  canvas unit. Scaling leaves off the canvas makes Corsican mint — whose whole point is
+  being tiny — the same size as spearmint.
+- Chart axis labels are laid out by measuring them, not by dividing the width into equal
+  slots: twenty-four equal slivers clip "03" to "0", which is how an hour axis came to
+  read "0 0 0 0 1 1 1 2" on a real phone.
 
 ## Conventions
 

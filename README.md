@@ -4,12 +4,18 @@ An open focus timer built around real mint plants, for Android.
 
 Choose how long you want to concentrate. While the session runs a single chunky progress
 bar fills and nothing else asks for your attention. Finish the block without leaving the
-app and the session is grafted onto **the Grove**: one continuously growing mint network
-that is the record of your attention, not a reward animation bolted on top of it.
+app and the session is planted in **the Grove**: a bed of mints that is the record of your
+attention, not a reward animation bolted on top of it.
+
+One session is one node — a stem segment and the pair of leaves on top of it — so a plant
+grows the way mint actually grows, pair by opposite pair, branching from its leaf axils.
+When a plant is full grown it stops, and your next session of that species starts another
+beside it.
 
 Every plant is a real member of the genus *Mentha* — spearmint, peppermint, water mint,
-Corsican mint — and new species unlock at cumulative focused-time milestones, each with a
-one-line botanical note.
+Corsican mint — drawn from a photo reference, leaf shape, margin, hairs and all. Cumulative
+focused time earns new species, and which one you unlock at each milestone is your choice:
+twelve to pick from at the first, one at the last.
 
 ## Principles
 

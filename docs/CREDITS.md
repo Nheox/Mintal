@@ -59,6 +59,15 @@ citations are to the published work; the wording is ours. The claims are deliber
 limited to well-replicated findings — testing effect, spacing, interleaving,
 self-explanation, sleep consolidation.
 
+Every line was checked against its paper in October 2026, and two were rewritten because
+they did not say what their source found. The interleaving line credited Rohrer & Taylor
+(2007) with the discrimination account that came later (Rohrer, 2012). The summarising
+line cited Dunlosky et al. (2013) — a review that rates summarisation *low* utility — for
+advice to write summaries, which is the opposite of its finding; it now reports what that
+review concluded instead. A third was adjusted from "retention" to "understanding", which
+is what Chi et al. (1994) measured. Corrections are welcome: a line that overstates its
+paper is a bug here, not a rounding error.
+
 ## Dependencies
 
 All OSI-licensed, resolved from Maven Central and Google's Maven. No Google Play Services,

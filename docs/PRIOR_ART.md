@@ -24,13 +24,15 @@ be contrary, but because an independent implementation should look independent:
 |---|---|
 | A radial dial to set the duration | A horizontal **growth track**: a stylised mint runner, marked at five-minute steps, with a bud marker you drag (§5.1) |
 | A radial arc filling while the session runs | A chunky horizontal **session bar** in the spirit of a game's mana bar, with the time on it and a legend line beneath (§5.2) |
-| One plant per session, in a grid or plot | **The Grove**: one continuous mint network where every session grafts a new runner segment onto the growth before it (§5.6) |
-| A generic tree or shrub | Only real species of *Mentha*, told apart by leaf shape, leaf margin and growth habit rather than by tint (§6.1, §8.3) |
+| One plant per session, in a grid or plot | **The Grove**: a bed where a session adds one node — a stem segment and an opposite leaf pair — to a living plant, and a plant that reaches maturity stops while the next session starts another beside it (§5.6) |
+| A generic tree or shrub | Only real species of *Mentha*, told apart by leaf shape, attachment, margin, surface, hairs, stem colour and flower form rather than by tint (§6.1, §8.3) |
+| Species unlocked in a fixed order | A milestone earns a slot and the player chooses which mint fills it — twelve candidates at the first, one at the last (§6.1) |
 
-The Grove in particular is not a reskin: real mint spreads by stolons that root and branch
-as they travel, so a single spreading network that lengthens with every session is more
-botanically honest than a garden of individually potted mints — and it is what makes the
-visualisation Mintal's own.
+The Grove in particular is not a reskin. It is built on how *Mentha* actually grows: square
+stems, opposite leaf pairs turned ninety degrees from the pair below them, branches out of
+leaf axils, and a plant that finishes rather than scaling forever. A session buys one node
+of that structure, so the picture is a record of attention in the plant's own units — and
+that is what makes the visualisation Mintal's own.
 
 ## What is genuinely shared with the category
 
