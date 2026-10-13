@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Only the window background before Compose draws its first frame; everything else
+      is themed by the Compose token layer (ui/theme). Parented on a platform theme so
+      the app needs no Material Components dependency.
+    -->
+    <style name="Theme.Mintal.Starting" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/mintal_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

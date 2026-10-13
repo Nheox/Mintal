@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors MintalColors.kt; used only by the pre-Compose window and launcher icon. -->
+    <color name="mintal_window_background">#F2FBF6</color>
+    <color name="mintal_launcher_background">#D7F2E3</color>
+</resources>

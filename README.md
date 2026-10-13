@@ -1,2 +1,101 @@
 # Mintal
-Open focus timer for studying
+
+An open focus timer built around real mint plants, for Android.
+
+Choose how long you want to concentrate. While the session runs a single chunky progress
+bar fills and nothing else asks for your attention. Finish the block without leaving the
+app and the session is grafted onto **the Grove**: one continuously growing mint network
+that is the record of your attention, not a reward animation bolted on top of it.
+
+Every plant is a real member of the genus *Mentha* — spearmint, peppermint, water mint,
+Corsican mint — and new species unlock at cumulative focused-time milestones, each with a
+one-line botanical note.
+
+## Principles
+
+- **Local-first.** Everything lives in a database on your device and works in airplane
+  mode. No account, no server of ours.
+- **No surveillance.** No analytics, no crash reporting, no advertising IDs, no network
+  calls of any kind.
+- **No paywall.** Every feature is available to everyone. Nothing is for sale, ever.
+- **Minimum permissions.** The app asks for the least it can and still work, explains
+  anything optional before requesting it, and stays fully functional when refused.
+- **Honest blocking.** Leaving mid-session gets a visible 15-second warning before the
+  session is failed. Mintal never seizes control of your device.
+
+### No INTERNET permission
+
+Mintal's manifest contains no `INTERNET` permission, so the app cannot send your data
+anywhere even by accident. You can verify that in
+[`app/src/main/AndroidManifest.xml`](app/src/main/AndroidManifest.xml).
+
+A later, opt-in cloud *backup* is planned, and it does not change this: it writes the same
+JSON backup file to a folder **you** pick with Android's own document picker (Drive,
+Nextcloud, a local folder — whatever is already installed). Mintal holds no credentials,
+talks to no sync API, and runs no backend. One-way backup to storage you already own is
+not two-way sync, which stays out of scope.
+
+## State of the project
+
+Early. The v1 feature set is implemented — countdown and count-up sessions, the Grove,
+tags, ratings and notes, statistics, the species catalogue with milestone unlocks,
+distraction detection with an allowlist, CSV export and full JSON backup/restore — and the
+app builds and runs. Two things are deliberately placeholders:
+
+- **Artwork.** The twelve mints and the Grove are drawn procedurally from real botanical
+  traits (leaf shape, leaf margin, growth habit, relative size) rather than from
+  commissioned illustrations, which do not exist yet. See `docs/CREDITS.md`.
+- **Typography.** Both faces are system families. A bundled typeface will replace them;
+  nothing is ever downloaded at runtime, because that would break a reproducible build.
+
+## Building
+
+Requirements: JDK 17 or newer and the Android SDK (platform 36). Nothing else — no
+Google Play Services, no vendor SDKs.
+
+```sh
+git clone https://github.com/Nheox/mintal.git
+cd mintal
+./gradlew assembleDebug       # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease     # unsigned release APK
+./gradlew test                # unit tests
+```
+
+If Gradle cannot find the SDK, point it at one:
+
+```sh
+echo "sdk.dir=$HOME/Android/Sdk" > local.properties
+```
+
+CI builds both APKs and runs the tests on every push; the debug APK is attached to each
+run as a downloadable artifact.
+
+## Distribution
+
+F-Droid builds its own APK from this source — it does not accept a pre-built one — so the
+only thing this repository needs to guarantee is a clean, reproducible
+`assembleRelease`. There are no vendor SDKs, no artifacts fetched outside Maven Central
+and Google's Maven, and nothing downloaded at runtime. The F-Droid recipe itself lives in
+F-Droid's own `fdroiddata` repository and is submitted once there is a stable tagged
+release.
+
+## Layout
+
+```
+app/src/main/kotlin/dev/nheox/mintal/
+├── core/        model, time
+├── data/        room, datastore, repositories, species catalogue, export/backup
+├── domain/      session engine, milestones, statistics, Grove layout
+├── service/     foreground service, distraction detection
+└── ui/          radial-hub home, session flow, grove, stats, tags, species, settings
+```
+
+## Licence
+
+GPL-3.0. See [LICENSE](LICENSE).
+
+## Prior art
+
+A focus timer with a visual reward loop is a well-established category. Mintal is an
+independent implementation written from a behavioural specification; no code, assets, text
+or branding from any existing app is used. See [docs/PRIOR_ART.md](docs/PRIOR_ART.md).

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mintal</string>
+
+    <string name="session_channel_name">Focus session</string>
+    <string name="session_channel_description">Shows the running session and its remaining time.</string>
+
+    <string name="notification_give_up">Give up</string>
+    <string name="notification_session_running">Focus session running</string>
+    <string name="notification_grace_warning">Come back to Mintal or the session fails</string>
+</resources>

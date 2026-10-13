@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "species": [
+    {
+      "id": "spicata",
+      "binomial": "Mentha spicata",
+      "commonName": "Spearmint",
+      "unlockMinutes": 0,
+      "hybrid": false,
+      "note": "True species. Pointed, sharply serrated leaves and a sweet, low-menthol scent — the mint of kitchen gardens and tea.",
+      "art": { "leafShape": "SPEAR", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "piperita",
+      "binomial": "Mentha × piperita",
+      "commonName": "Peppermint",
+      "unlockMinutes": 120,
+      "hybrid": true,
+      "note": "Natural hybrid of M. aquatica and M. spicata. High in menthol, which is where the cold bite comes from.",
+      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_DARK", "stemHue": "STEM_PURPLE" }
+    },
+    {
+      "id": "suaveolens",
+      "binomial": "Mentha suaveolens",
+      "commonName": "Apple mint",
+      "unlockMinutes": 300,
+      "hybrid": false,
+      "note": "True species. Round, woolly, soft-scented leaves; copes with dry ground better than most mints.",
+      "art": { "leafShape": "ROUND", "margin": "CRENATE", "habit": "UPRIGHT", "leafScale": 1.15, "leafHue": "LEAF_PALE", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "arvensis",
+      "binomial": "Mentha arvensis",
+      "commonName": "Field mint",
+      "unlockMinutes": 600,
+      "hybrid": false,
+      "note": "True species, and the most widespread — native across the northern hemisphere, grown in Asia as a menthol crop.",
+      "art": { "leafShape": "OVATE", "margin": "CRENATE", "habit": "CREEPING", "leafScale": 0.9, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "aquatica",
+      "binomial": "Mentha aquatica",
+      "commonName": "Water mint",
+      "unlockMinutes": 1200,
+      "hybrid": false,
+      "note": "True species. Grows with its feet in water and flowers in lilac heads; one parent of peppermint.",
+      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.05, "leafHue": "LEAF_BLUE", "stemHue": "STEM_PURPLE" }
+    },
+    {
+      "id": "gracilis",
+      "binomial": "Mentha × gracilis",
+      "commonName": "Ginger mint",
+      "unlockMinutes": 2100,
+      "hybrid": true,
+      "note": "Hybrid of M. arvensis and M. spicata. Gold-flecked foliage and a warm, faintly spicy scent.",
+      "art": { "leafShape": "LANCEOLATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 0.95, "leafHue": "LEAF_GOLD", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "longifolia",
+      "binomial": "Mentha longifolia",
+      "commonName": "Horse mint",
+      "unlockMinutes": 3000,
+      "hybrid": false,
+      "note": "True species. Tall, grey-downy and long-leaved; the hairs are what give it its pale cast.",
+      "art": { "leafShape": "LANCEOLATE", "margin": "SERRATE", "habit": "TALL", "leafScale": 1.2, "leafHue": "LEAF_GREY", "stemHue": "STEM_GREY" }
+    },
+    {
+      "id": "pulegium",
+      "binomial": "Mentha pulegium",
+      "commonName": "Pennyroyal",
+      "unlockMinutes": 4500,
+      "hybrid": false,
+      "note": "True species. Low, creeping and intensely scented; long used medicinally, but toxic in quantity.",
+      "art": { "leafShape": "OVATE", "margin": "ENTIRE", "habit": "CREEPING", "leafScale": 0.75, "leafHue": "LEAF_DARK", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "requienii",
+      "binomial": "Mentha requienii",
+      "commonName": "Corsican mint",
+      "unlockMinutes": 6000,
+      "hybrid": false,
+      "note": "True species, and the smallest — leaves a few millimetres across, matting over stone and scenting the air underfoot.",
+      "art": { "leafShape": "ROUND", "margin": "ENTIRE", "habit": "CREEPING", "leafScale": 0.55, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+    },
+    {
+      "id": "citrata_chocolate",
+      "binomial": "Mentha × piperita f. citrata 'Chocolate'",
+      "commonName": "Chocolate mint",
+      "unlockMinutes": 9000,
+      "hybrid": true,
+      "note": "A peppermint cultivar. Dark stems and a cocoa-like note over the usual menthol.",
+      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_DARK", "stemHue": "STEM_BROWN" }
+    },
+    {
+      "id": "citrata_lavender",
+      "binomial": "Mentha × piperita f. citrata 'Lavender'",
+      "commonName": "Lavender mint",
+      "unlockMinutes": 12000,
+      "hybrid": true,
+      "note": "A peppermint cultivar selected for a floral, lavender-like scent rather than a sharper one.",
+      "art": { "leafShape": "LANCEOLATE", "margin": "CRENATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_BLUE", "stemHue": "STEM_PURPLE" }
+    },
+    {
+      "id": "cervina",
+      "binomial": "Mentha cervina",
+      "commonName": "Hart's pennyroyal",
+      "unlockMinutes": 18000,
+      "hybrid": false,
+      "note": "True species, sometimes split off as Preslia cervina. Needle-narrow leaves and whorls of white flowers; a wetland plant of Iberia.",
+      "art": { "leafShape": "NEEDLE", "margin": "ENTIRE", "habit": "TALL", "leafScale": 0.85, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+    }
+  ]
+}
