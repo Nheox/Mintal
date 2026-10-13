@@ -3,39 +3,53 @@ package dev.nheox.mintal.domain.milestone
 import dev.nheox.mintal.core.model.Species
 
 /**
- * Unlocks are derived from one number — cumulative successful seconds — and never from a
- * stored counter (spec §7). That is what makes a restored backup recompute correctly and
- * keeps a deleted session from stranding an unlock.
+ * Milestones earn a *slot*, not a particular mint (spec §6.1, amended).
+ *
+ * The thresholds are still the catalogue's — twelve of them, from zero to three hundred
+ * hours — and still derived from one number, cumulative successful seconds, so a restored
+ * backup recomputes correctly and a deleted session cannot strand an unlock. What changed
+ * is the other half: crossing a threshold entitles the player to one more mint, and which
+ * mint that is, is theirs to pick. Twelve candidates at the first milestone, eleven at the
+ * second, one at the last.
+ *
+ * So two sources of truth sit side by side, and the distinction is the thing to keep hold
+ * of: *how many* mints are unlocked is derived here and never stored; *which* ones is a
+ * decision only the player can make, and is the one thing the species table holds.
  */
 object MilestoneEngine {
 
-    fun isUnlocked(species: Species, totalSuccessfulSeconds: Int): Boolean =
-        totalSuccessfulSeconds >= species.unlockMinutes * 60
+    /** Every milestone threshold in the catalogue, in minutes, ascending. */
+    fun thresholdsMinutes(catalog: List<Species>): List<Int> =
+        catalog.map { it.unlockMinutes }.distinct().sorted()
 
-    fun unlockedIds(catalog: List<Species>, totalSuccessfulSeconds: Int): Set<String> =
-        catalog.filter { isUnlocked(it, totalSuccessfulSeconds) }.map { it.id }.toSet()
+    /** How many mints this much successful focus entitles the player to have chosen. */
+    fun earnedSlots(catalog: List<Species>, totalSuccessfulSeconds: Int): Int =
+        thresholdsMinutes(catalog).count { totalSuccessfulSeconds >= it * 60 }
 
-    /** Species whose threshold is met but which have not been stamped yet. */
-    fun newlyUnlocked(
+    /**
+     * Choices waiting to be made. Never negative — a backup restored onto a shorter
+     * history, or a deleted session, leaves more mints chosen than earned, and taking one
+     * away again would be a punishment the player cannot act on.
+     */
+    fun pendingChoices(
         catalog: List<Species>,
-        alreadyStamped: Set<String>,
         totalSuccessfulSeconds: Int,
-    ): List<Species> = catalog
-        .filter { isUnlocked(it, totalSuccessfulSeconds) && it.id !in alreadyStamped }
-        .sortedBy { it.unlockMinutes }
+        chosenCount: Int,
+    ): Int = (earnedSlots(catalog, totalSuccessfulSeconds) - chosenCount)
+        .coerceIn(0, (catalog.size - chosenCount).coerceAtLeast(0))
 
-    fun nextMilestone(catalog: List<Species>, totalSuccessfulSeconds: Int): Species? = catalog
-        .filterNot { isUnlocked(it, totalSuccessfulSeconds) }
-        .minByOrNull { it.unlockMinutes }
+    /** Minutes at the next threshold the player has not reached, or null when done. */
+    fun nextThresholdMinutes(catalog: List<Species>, totalSuccessfulSeconds: Int): Int? =
+        thresholdsMinutes(catalog).firstOrNull { totalSuccessfulSeconds < it * 60 }
 
-    /** 0f..1f progress toward the next milestone, or 1f once the catalogue is complete. */
+    /** 0f..1f toward the next milestone, or 1f once every threshold is behind the player. */
     fun progressToNext(catalog: List<Species>, totalSuccessfulSeconds: Int): Float {
-        val next = nextMilestone(catalog, totalSuccessfulSeconds) ?: return 1f
-        val previousThreshold = catalog
-            .filter { isUnlocked(it, totalSuccessfulSeconds) }
-            .maxOfOrNull { it.unlockMinutes * 60 } ?: 0
-        val span = next.unlockMinutes * 60 - previousThreshold
+        val next = nextThresholdMinutes(catalog, totalSuccessfulSeconds) ?: return 1f
+        val previous = thresholdsMinutes(catalog)
+            .filter { totalSuccessfulSeconds >= it * 60 }
+            .maxOrNull() ?: 0
+        val span = (next - previous) * 60
         if (span <= 0) return 1f
-        return ((totalSuccessfulSeconds - previousThreshold).toFloat() / span).coerceIn(0f, 1f)
+        return ((totalSuccessfulSeconds - previous * 60).toFloat() / span).coerceIn(0f, 1f)
     }
 }

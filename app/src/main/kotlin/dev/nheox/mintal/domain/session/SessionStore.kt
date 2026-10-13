@@ -1,6 +1,5 @@
 package dev.nheox.mintal.domain.session
 
-import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.data.db.entity.SessionEntity
 
 /**
@@ -14,5 +13,10 @@ import dev.nheox.mintal.data.db.entity.SessionEntity
 interface SessionStore {
     suspend fun record(session: SessionEntity): Long
 
-    suspend fun refreshUnlocks(nowMillis: Long): List<Species>
+    /**
+     * How many mints the player has earned and not yet picked, counting the session just
+     * recorded. The controller never picks one itself — that is the player's call at a
+     * milestone (spec §6.1, amended) — it only reports that one is waiting.
+     */
+    suspend fun pendingUnlockChoices(): Int
 }

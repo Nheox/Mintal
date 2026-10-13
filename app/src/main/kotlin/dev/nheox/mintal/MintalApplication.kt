@@ -4,7 +4,6 @@ import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.data.prefs.MintalPreferences
-import dev.nheox.mintal.data.repository.SpeciesRepository
 import dev.nheox.mintal.data.repository.TagRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +16,6 @@ import javax.inject.Inject
 class MintalApplication : Application() {
 
     @Inject lateinit var tagRepository: TagRepository
-
-    @Inject lateinit var speciesRepository: SpeciesRepository
 
     @Inject lateinit var clock: MintalClock
 
@@ -36,8 +33,9 @@ class MintalApplication : Application() {
                 tagRepository.seedStarterTagsIfEmpty(now)
                 preferences.setStarterTagsSeeded(true)
             }
-            // Unlock state is always recomputed, never assumed (spec §7).
-            speciesRepository.refreshUnlocks(now)
+            // Nothing to do for unlocks here any more: how many mints are earned is
+            // derived from the session total whenever it is asked for, and which ones
+            // they are is the player's choice, offered at the milestone (spec §6.1).
         }
     }
 }

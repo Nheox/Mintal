@@ -104,6 +104,19 @@ class SettingsViewModel @Inject constructor(
         android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
         Uri.parse("package:${context.packageName}"),
     )
+
+    /**
+     * Android only offers the notification prompt a couple of times; after that the
+     * switch lives in system settings, so that is where Settings sends the user.
+     */
+    fun notificationSettingsIntent(): Intent =
+        Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    fun setPermissionNoteDismissed(key: String, dismissed: Boolean) = viewModelScope.launch {
+        preferences.setPermissionNoteDismissed(key, dismissed)
+    }
 }
 
 data class AllowlistRow(

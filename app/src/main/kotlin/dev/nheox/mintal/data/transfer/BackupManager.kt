@@ -99,9 +99,11 @@ class BackupManager @Inject constructor(
             allowlistRepository.replaceAll(allowed)
             root.optJSONObject("preferences")?.let { preferences.replaceAll(it.toSettings()) }
 
-            // Unlock state is derived, so a restore recomputes it rather than trusting the
-            // stamps in the file (spec §7).
-            speciesRepository.refreshUnlocks(System.currentTimeMillis())
+            // The stamps in the file are kept as they are: which mints were chosen is
+            // the player's own history and cannot be recomputed from anything (spec
+            // §6.1, amended). How many they are entitled to still follows from the
+            // restored sessions, so a backup from a longer history simply leaves a
+            // choice waiting.
 
             sessions.size
         }
@@ -109,10 +111,9 @@ class BackupManager @Inject constructor(
 
     suspend fun clearAllData() {
         sessionRepository.deleteAll()
+        // Back to the starting state, which is not "spearmint again" but "pick one":
+        // with no successful time, exactly one slot is earned and nothing fills it.
         speciesRepository.replaceAll(emptyList())
-        // Back to the starting state: the one mint that needs no focus at all is unlocked
-        // again immediately, rather than at the next app start.
-        speciesRepository.refreshUnlocks(System.currentTimeMillis())
     }
 
     private fun write(target: Uri, text: String) {
@@ -125,6 +126,15 @@ class BackupManager @Inject constructor(
         val stream = context.contentResolver.openInputStream(source)
             ?: error("Could not open the chosen file for reading.")
         return stream.use { input -> input.bufferedReader(Charsets.UTF_8).readText() }
+    }
+
+    private fun JSONArray?.mapObjectsToStrings(): Set<String> {
+        if (this == null) return emptySet()
+        val result = LinkedHashSet<String>(length())
+        for (index in 0 until length()) {
+            result += getString(index)
+        }
+        return result
     }
 
     private inline fun <T> JSONArray?.mapObjects(transform: (JSONObject) -> T): List<T> {
@@ -214,6 +224,7 @@ class BackupManager @Inject constructor(
         .put("onboardingComplete", onboardingComplete)
         .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
+        .put("dismissedPermissionNotes", JSONArray(dismissedPermissionNotes.toList()))
 
     private fun JSONObject.toSettings(): MintalSettings {
         val defaults = MintalSettings()
@@ -233,6 +244,8 @@ class BackupManager @Inject constructor(
             starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }
                 .getOrDefault(defaults.theme),
+            dismissedPermissionNotes = optJSONArray("dismissedPermissionNotes")
+                .mapObjectsToStrings(),
         )
     }
 

@@ -44,6 +44,7 @@ import dev.nheox.mintal.ui.components.StatLine
 fun SessionResultScreen(
     onDone: () -> Unit,
     onStartAnother: () -> Unit,
+    onChooseMint: () -> Unit,
 ) {
     val viewModel: SessionResultViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -98,27 +99,27 @@ fun SessionResultScreen(
                 StatLine("Tag", state.tagName ?: "none")
             }
 
-            if (state.newlyUnlocked.isNotEmpty()) {
-                SectionCard(title = "New mint unlocked") {
-                    state.newlyUnlocked.forEach { species ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            SpeciesEmblem(species = species, size = 40.dp)
-                            Column {
-                                Text(
-                                    text = "${species.commonName} (${species.binomial})",
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                Text(
-                                    text = species.note,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
+            if (state.pendingUnlockChoices > 0) {
+                SectionCard(
+                    title = if (state.pendingUnlockChoices == 1) {
+                        "A new mint is yours to choose"
+                    } else {
+                        "${state.pendingUnlockChoices} mints are yours to choose"
+                    },
+                ) {
+                    Text(
+                        text = "A milestone has been reached. Which mint fills it is your " +
+                            "call — every one still locked is on the table.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            viewModel.save()
+                            onChooseMint()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Choose now") }
                 }
             }
 

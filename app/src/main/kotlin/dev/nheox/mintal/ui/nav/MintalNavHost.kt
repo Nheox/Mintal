@@ -17,6 +17,7 @@ import dev.nheox.mintal.ui.settings.AboutScreen
 import dev.nheox.mintal.ui.settings.AllowlistScreen
 import dev.nheox.mintal.ui.settings.SettingsScreen
 import dev.nheox.mintal.ui.species.SpeciesScreen
+import dev.nheox.mintal.ui.species.UnlockChoiceScreen
 import dev.nheox.mintal.ui.stats.StatsScreen
 import dev.nheox.mintal.ui.tags.TagsScreen
 
@@ -27,9 +28,28 @@ fun MintalNavHost(startDestination: String) {
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.ONBOARDING) {
             OnboardingScreen(
+                // Straight into the first choice: with nothing chosen there is nothing
+                // to plant, so the hub would only send them here anyway (spec §6.1).
+                onDone = {
+                    navController.navigate(Routes.UNLOCK) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(Routes.UNLOCK) {
+            UnlockChoiceScreen(
                 onDone = {
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        // Reached from onboarding, from the hub or from a result screen;
+                        // clearing the stack is the one answer that is right from all three.
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onBack = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(Routes.HOME) { popUpTo(0) { inclusive = true } }
                     }
                 },
             )
@@ -39,6 +59,7 @@ fun MintalNavHost(startDestination: String) {
             HomeScreen(
                 onOpenGrove = { navController.navigate(Routes.GROVE) },
                 onOpenSpecies = { navController.navigate(Routes.SPECIES) },
+                onChooseMint = { navController.navigate(Routes.UNLOCK) },
                 onOpenTags = { navController.navigate(Routes.TAGS) },
                 onOpenStats = { navController.navigate(Routes.STATS) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
@@ -82,6 +103,7 @@ fun MintalNavHost(startDestination: String) {
                         popUpTo(Routes.HOME) { inclusive = true }
                     }
                 },
+                onChooseMint = { navController.navigate(Routes.UNLOCK) },
             )
         }
 
@@ -118,7 +140,10 @@ fun MintalNavHost(startDestination: String) {
         }
 
         composable(Routes.SPECIES) {
-            SpeciesScreen(onBack = { navController.popBackStack() })
+            SpeciesScreen(
+                onBack = { navController.popBackStack() },
+                onChooseMint = { navController.navigate(Routes.UNLOCK) },
+            )
         }
 
         composable(Routes.TAGS) {

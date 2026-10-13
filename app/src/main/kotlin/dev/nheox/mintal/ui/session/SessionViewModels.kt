@@ -25,8 +25,11 @@ import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.service.FocusSessionService
 import dev.nheox.mintal.ui.nav.Routes
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -43,11 +46,22 @@ data class SetupState(
     val species: Species? = null,
     val tag: TagEntity? = null,
     val totalSuccessfulSeconds: Int = 0,
-    val nextMilestone: Species? = null,
+    val nextMilestoneMinutes: Int? = null,
     val milestoneProgress: Float = 0f,
+    val pendingUnlockChoices: Int = 0,
     val unlockedCount: Int = 0,
     val catalogueSize: Int = 0,
     val tags: List<TagEntity> = emptyList(),
+    val dismissedPermissionNotes: Set<String> = emptySet(),
+)
+
+/**
+ * The few seconds between pressing START and the session actually existing (spec §5.2).
+ * Nothing is recorded while this is counting down, so cancelling costs nothing at all.
+ */
+data class PlantingWindow(
+    val secondsLeft: Int,
+    val speciesName: String,
 )
 
 @HiltViewModel
@@ -68,11 +82,12 @@ class SessionSetupViewModel @Inject constructor(
         speciesRepository.observeStatuses(),
         tagRepository.observeAll(),
         sessionRepository.observeSuccessfulSecondsTotal(),
-    ) { settings, statuses, tags, totalSeconds ->
+        speciesRepository.observePendingChoices(),
+    ) { settings, statuses, tags, totalSeconds, pending ->
         val catalogue = statuses.map { it.species }
-        val unlocked = statuses.filter {
-            it.isUnlocked || MilestoneEngine.isUnlocked(it.species, totalSeconds)
-        }
+        // Only mints the player has actually chosen can be planted; an earned-but-unspent
+        // slot is not a mint yet.
+        val unlocked = statuses.filter { it.isUnlocked }
         val selected = unlocked.firstOrNull { it.species.id == settings.selectedSpeciesId }?.species
             ?: unlocked.firstOrNull()?.species
         SetupState(
@@ -81,21 +96,41 @@ class SessionSetupViewModel @Inject constructor(
             species = selected,
             tag = tags.firstOrNull { it.id == settings.selectedTagId },
             totalSuccessfulSeconds = totalSeconds,
-            nextMilestone = MilestoneEngine.nextMilestone(catalogue, totalSeconds),
+            nextMilestoneMinutes = MilestoneEngine.nextThresholdMinutes(catalogue, totalSeconds),
             milestoneProgress = MilestoneEngine.progressToNext(catalogue, totalSeconds),
+            pendingUnlockChoices = pending,
             unlockedCount = unlocked.size,
             catalogueSize = catalogue.size,
             tags = tags,
+            dismissedPermissionNotes = settings.dismissedPermissionNotes,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SetupState())
 
+    private val _planting = MutableStateFlow<PlantingWindow?>(null)
+
+    /** Non-null while a session is armed but not yet committed. */
+    val planting: StateFlow<PlantingWindow?> = _planting.asStateFlow()
+
+    private var plantingJob: Job? = null
+
     fun setMinutes(minutes: Int) = viewModelScope.launch {
+        cancelPlanting()
         preferences.setLastDuration(SessionRules.clampMinutes(minutes))
     }
 
-    fun setMode(mode: SessionMode) = viewModelScope.launch { preferences.setMode(mode) }
+    fun setMode(mode: SessionMode) = viewModelScope.launch {
+        cancelPlanting()
+        preferences.setMode(mode)
+    }
 
-    fun selectTag(tagId: Long?) = viewModelScope.launch { preferences.setSelectedTag(tagId) }
+    fun selectTag(tagId: Long?) = viewModelScope.launch {
+        cancelPlanting()
+        preferences.setSelectedTag(tagId)
+    }
+
+    fun setPermissionNoteDismissed(key: String, dismissed: Boolean) = viewModelScope.launch {
+        preferences.setPermissionNoteDismissed(key, dismissed)
+    }
 
     /**
      * Tagging a session should not mean leaving the screen you were about to start it
@@ -103,21 +138,57 @@ class SessionSetupViewModel @Inject constructor(
      * repository, which leaves the current tag alone.
      */
     fun createTag(name: String) = viewModelScope.launch {
+        cancelPlanting()
         val colourIndex = state.value.tags.size % TagRepository.TAG_PALETTE_SIZE
         val id = tagRepository.create(name, colourIndex, clock.nowMillis())
         if (id != null) preferences.setSelectedTag(id)
     }
 
-    /** Starting a session is the service's job from here on (spec §5.2). */
+    /**
+     * START arms the session rather than beginning it: a short window counts down first,
+     * and only when it runs out does the service — and therefore the session — exist.
+     * Changing any setting cancels it, which is what makes "wait, not 5 minutes" free.
+     */
     fun start() {
+        if (plantingJob?.isActive == true) return
+        if (state.value.species == null) return
+        plantingJob = viewModelScope.launch {
+            for (remaining in SessionRules.PLANTING_WINDOW_SECONDS downTo 1) {
+                _planting.value = PlantingWindow(
+                    secondsLeft = remaining,
+                    speciesName = state.value.species?.commonName ?: "a mint",
+                )
+                delay(1_000L)
+            }
+            _planting.value = null
+            commit()
+        }
+    }
+
+    /** True if there was a window to cancel, so the caller can report it. */
+    fun cancelPlanting(): Boolean {
+        val wasArmed = plantingJob?.isActive == true || _planting.value != null
+        plantingJob?.cancel()
+        plantingJob = null
+        _planting.value = null
+        return wasArmed
+    }
+
+    /** Starting a session is the service's job from here on (spec §5.2). */
+    private fun commit() {
         val current = state.value
         FocusSessionService.start(
             context = context,
             mode = current.mode,
             plannedSeconds = current.minutes * 60,
-            speciesId = current.species?.id ?: "spicata",
+            speciesId = current.species?.id ?: return,
             tagId = current.tag?.id,
         )
+    }
+
+    override fun onCleared() {
+        cancelPlanting()
+        super.onCleared()
     }
 }
 
@@ -172,7 +243,7 @@ data class ResultUiState(
     val session: SessionEntity? = null,
     val species: Species? = null,
     val tagName: String? = null,
-    val newlyUnlocked: List<Species> = emptyList(),
+    val pendingUnlockChoices: Int = 0,
     val rating: Int? = null,
     val note: String = "",
 )
@@ -208,7 +279,11 @@ class SessionResultViewModel @Inject constructor(
             session = session,
             species = species,
             tagName = tags.firstOrNull { it.id == session?.tagId }?.name,
-            newlyUnlocked = if (recorded?.sessionId == sessionId) recorded.newlyUnlocked else emptyList(),
+            pendingUnlockChoices = if (recorded?.sessionId == sessionId) {
+                recorded.pendingUnlockChoices
+            } else {
+                0
+            },
             rating = edit?.first ?: session?.rating,
             note = edit?.second ?: session?.note ?: "",
         )

@@ -8,6 +8,7 @@ object Routes {
     const val GROVE = "grove"
     const val STATS = "stats"
     const val SPECIES = "species"
+    const val UNLOCK = "unlock"
     const val TAGS = "tags"
     const val SETTINGS = "settings"
     const val ALLOWLIST = "allowlist"

@@ -17,13 +17,21 @@ object LegendLines {
         "mint spreads sideways before it grows tall",
     )
 
+    /*
+     * Each line is checked against the paper it names, and says only what that paper
+     * actually found. Two were wrong on the first pass and are worth remembering:
+     * interleaving's "helps you tell problem types apart" is the later discrimination
+     * account (Rohrer, 2012), not what the 2007 experiment measured; and Dunlosky's
+     * review rates summarising as LOW utility, so citing it for "write a summary" said
+     * the opposite of its finding.
+     */
     val studyTips: List<String> = listOf(
         "Study tip · Testing yourself on material beats re-reading it, even when re-reading feels more productive (Roediger & Karpicke, 2006).",
         "Study tip · Spacing the same total study time across days beats massing it in one sitting (Cepeda et al., 2006).",
-        "Study tip · Mixing problem types in one session — interleaving — improves later discrimination between them (Rohrer & Taylor, 2007).",
-        "Study tip · Explaining a concept to yourself in your own words while reading improves retention (Chi et al., 1994).",
+        "Study tip · Mixing problem types in one session — interleaving — feels harder while you practise and scores far better a week later (Rohrer & Taylor, 2007).",
+        "Study tip · Explaining each step to yourself in your own words while you read builds a truer mental model than reading it twice (Chi et al., 1994).",
         "Study tip · Sleep after study consolidates what you learned; a late all-nighter trades retention for hours (Walker & Stickgold, 2006).",
-        "Study tip · Writing a short summary from memory, then checking it, surfaces what you only thought you knew (Dunlosky et al., 2013).",
+        "Study tip · Of ten common study techniques reviewed, highlighting and re-reading rated lowest and self-testing highest (Dunlosky et al., 2013).",
     )
 
     /** Alternates flavour and tip so the two never blur into one voice. */

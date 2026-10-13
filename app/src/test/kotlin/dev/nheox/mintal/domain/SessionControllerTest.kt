@@ -2,7 +2,6 @@ package dev.nheox.mintal.domain
 
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.model.SessionOutcome
-import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.data.db.entity.SessionEntity
 import dev.nheox.mintal.domain.session.SessionController
@@ -39,7 +38,8 @@ class SessionControllerTest {
 
     private class FakeStore : SessionStore {
         val recorded = mutableListOf<SessionEntity>()
-        var unlockRefreshes = 0
+        var unlockQueries = 0
+        var pendingChoices = 0
         var onRecord: (() -> Unit)? = null
 
         override suspend fun record(session: SessionEntity): Long {
@@ -48,9 +48,9 @@ class SessionControllerTest {
             return recorded.size.toLong()
         }
 
-        override suspend fun refreshUnlocks(nowMillis: Long): List<Species> {
-            unlockRefreshes++
-            return emptyList()
+        override suspend fun pendingUnlockChoices(): Int {
+            unlockQueries++
+            return pendingChoices
         }
     }
 
@@ -75,7 +75,7 @@ class SessionControllerTest {
         assertEquals(SessionOutcome.SUCCESS, row.outcome)
         assertEquals(25 * 60, row.actualSeconds)
         assertEquals(25 * 60, row.plannedSeconds)
-        assertEquals(1, store.unlockRefreshes)
+        assertEquals(1, store.unlockQueries)
     }
 
     @Test
@@ -98,7 +98,11 @@ class SessionControllerTest {
         val row = store.recorded.single()
         assertEquals(SessionOutcome.LEFT_APP, row.outcome)
         assertEquals(315, row.actualSeconds, "partial time is kept")
-        assertEquals(0, store.unlockRefreshes, "a failed session earns no species")
+        assertEquals(
+            0,
+            (controller.result.value as? SessionResult.Recorded)?.pendingUnlockChoices,
+            "a failed session adds no successful time, so it opens no slot",
+        )
     }
 
     @Test
@@ -157,7 +161,7 @@ class SessionControllerTest {
         assertEquals(90, row.actualSeconds)
         assertEquals(0, row.plannedSeconds, "a count-up session has nothing planned")
         assertEquals(7L, row.tagId)
-        assertEquals(1, store.unlockRefreshes)
+        assertEquals(1, store.unlockQueries)
     }
 
     @Test
@@ -170,7 +174,26 @@ class SessionControllerTest {
         assertEquals(SessionOutcome.GAVE_UP, row.outcome)
         assertEquals(420, row.actualSeconds)
         assertEquals("piperita", row.speciesId, "intent is kept even though the Grove wilts it")
-        assertEquals(0, store.unlockRefreshes)
+        assertEquals(
+            0,
+            (controller.result.value as? SessionResult.Recorded)?.pendingUnlockChoices,
+        )
+    }
+
+    @Test
+    fun `a milestone is reported as a choice, never taken on the player's behalf`() = runTest {
+        store.pendingChoices = 1
+        controller.start(SessionMode.COUNTDOWN, 5 * 60, "spicata", null)
+        clock.advanceSeconds(5 * 60L)
+        controller.tick()
+
+        val result = controller.result.value as? SessionResult.Recorded
+        assertEquals(1, result?.pendingUnlockChoices)
+        assertEquals(
+            1,
+            store.unlockQueries,
+            "asked once, after the row is written, so this session's time counts",
+        )
     }
 
     @Test

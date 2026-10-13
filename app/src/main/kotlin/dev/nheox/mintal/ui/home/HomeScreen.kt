@@ -41,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalTime
@@ -62,6 +65,8 @@ import dev.nheox.mintal.ui.components.GrowthTrack
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
 import dev.nheox.mintal.ui.components.SpeciesEmblem
+import dev.nheox.mintal.ui.permissions.MintalPermission
+import dev.nheox.mintal.ui.permissions.PermissionRationaleDialog
 import dev.nheox.mintal.ui.session.SessionSetupViewModel
 import dev.nheox.mintal.ui.theme.MintalTextStyles
 import kotlin.math.PI
@@ -79,6 +84,7 @@ import kotlin.math.sin
 fun HomeScreen(
     onOpenGrove: () -> Unit,
     onOpenSpecies: () -> Unit,
+    onChooseMint: () -> Unit,
     onOpenTags: () -> Unit,
     onOpenStats: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -87,13 +93,21 @@ fun HomeScreen(
     val viewModel: SessionSetupViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val running by viewModel.running.collectAsStateWithLifecycle()
+    val planting by viewModel.planting.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showTagPicker by remember { mutableStateOf(false) }
+    var explainingNotifications by remember { mutableStateOf(false) }
 
     // Reopening the app mid-session lands back on the running screen.
     if (running != null) {
         androidx.compose.runtime.LaunchedEffect(running) { onSessionRunning() }
     }
+
+    // Leaving the hub — to Settings, to the species list, or out of the app entirely —
+    // is as clear a "not yet" as the Cancel button, and must not start a session behind
+    // the user's back a moment later.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.cancelPlanting() }
+    DisposableEffect(Unit) { onDispose { viewModel.cancelPlanting() } }
 
     val notificationPermission = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -103,14 +117,21 @@ fun HomeScreen(
         viewModel.start()
     }
 
+    fun requestNotificationsThenStart() {
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     fun startSession() {
         val needsPermission = Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
-        if (needsPermission) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            viewModel.start()
+        when {
+            !needsPermission -> viewModel.start()
+            // Onboarding normally explains this one already; this covers the person who
+            // skipped it there, or refused once and is trying again (spec §9).
+            MintalPermission.NOTIFICATIONS.key in state.dismissedPermissionNotes ->
+                requestNotificationsThenStart()
+            else -> explainingNotifications = true
         }
     }
 
@@ -133,14 +154,71 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            if (state.pendingUnlockChoices > 0) {
+                SectionCard(
+                    title = if (state.unlockedCount == 0) {
+                        "Choose your first mint"
+                    } else {
+                        "A mint is waiting"
+                    },
+                ) {
+                    Text(
+                        text = if (state.unlockedCount == 0) {
+                            "Nothing is growing yet. Pick the mint you want to start with " +
+                                "— all twelve are on the table."
+                        } else {
+                            "You have earned ${state.pendingUnlockChoices} more " +
+                                if (state.pendingUnlockChoices == 1) "mint." else "mints."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(onClick = onChooseMint, modifier = Modifier.fillMaxWidth()) {
+                        Text("Choose")
+                    }
+                }
+            }
+
+            val armed = planting
+            if (armed != null) {
+                SectionCard(title = "Planting in ${armed.secondsLeft}…") {
+                    Text(
+                        text = "Nothing has been planted yet. Cancel, or change the " +
+                            "duration, mode or tag below, and this session never happened " +
+                            "— no record, no mint, nothing wilted in the Grove.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.cancelPlanting() },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Cancel") }
+                }
+            }
+
             HubRing(
-                centreLabel = if (state.mode == SessionMode.COUNTDOWN) {
-                    MintalTime.formatClock(state.minutes * 60)
-                } else {
-                    "Count up"
+                centreLabel = when {
+                    armed != null -> armed.secondsLeft.toString()
+                    state.mode == SessionMode.COUNTDOWN -> MintalTime.formatClock(state.minutes * 60)
+                    else -> "Count up"
                 },
-                centreDetail = state.species?.commonName ?: "—",
-                onStart = { startSession() },
+                centreDetail = if (armed != null) {
+                    "planting ${armed.speciesName}"
+                } else {
+                    state.species?.commonName ?: "no mint yet"
+                },
+                actionLabel = when {
+                    armed != null -> "CANCEL"
+                    state.species == null -> "CHOOSE"
+                    else -> "START"
+                },
+                onStart = {
+                    when {
+                        armed != null -> viewModel.cancelPlanting()
+                        state.species == null -> onChooseMint()
+                        else -> startSession()
+                    }
+                },
                 tiles = listOf(
                     HubTileSpec("The Grove", "your mint network", onOpenGrove),
                     HubTileSpec(
@@ -258,11 +336,12 @@ fun HomeScreen(
                 }
             }
 
-            if (state.nextMilestone != null) {
+            val nextMilestone = state.nextMilestoneMinutes
+            if (nextMilestone != null) {
                 SectionCard(title = "Next mint") {
                     Text(
-                        text = "${state.nextMilestone?.commonName} unlocks at " +
-                            "${(state.nextMilestone?.unlockMinutes ?: 0) / 60} h of successful focus.",
+                        text = "A milestone at ${nextMilestone / 60} h of successful focus. " +
+                            "Which mint it unlocks is your choice when you get there.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -281,6 +360,27 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (explainingNotifications) {
+        PermissionRationaleDialog(
+            permission = MintalPermission.NOTIFICATIONS,
+            hideInFuture = MintalPermission.NOTIFICATIONS.key in state.dismissedPermissionNotes,
+            onHideInFutureChange = { dismissed ->
+                viewModel.setPermissionNoteDismissed(MintalPermission.NOTIFICATIONS.key, dismissed)
+            },
+            onGrant = {
+                explainingNotifications = false
+                requestNotificationsThenStart()
+            },
+            onDismiss = {
+                // Refusing the explanation is not refusing the session: it starts anyway,
+                // without a live notification.
+                explainingNotifications = false
+                viewModel.start()
+            },
+            dismissLabel = "Start without it",
+        )
     }
 
     if (showTagPicker) {
@@ -354,6 +454,7 @@ private fun HubRing(
     centreDetail: String,
     onStart: () -> Unit,
     tiles: List<HubTileSpec>,
+    actionLabel: String = "START",
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -411,7 +512,7 @@ private fun HubRing(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "START",
+                    text = actionLabel,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimary,
                 )

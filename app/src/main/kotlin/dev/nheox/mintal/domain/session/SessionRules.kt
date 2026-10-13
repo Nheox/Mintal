@@ -11,6 +11,14 @@ object SessionRules {
     /** Grace period after leaving the app, with a visible warning (spec §5.3). */
     const val GRACE_SECONDS = 15
 
+    /**
+     * A session is armed, not started, for this long after START is pressed. Nothing is
+     * written and no service runs during it, so backing out leaves no row, no plant and
+     * no wilted stub — the point being that a mistyped duration or a wrong tag should not
+     * cost a mint.
+     */
+    const val PLANTING_WINDOW_SECONDS = 5
+
     /** A count-up session under a minute is discarded entirely (spec §5.4). */
     const val COUNT_UP_MIN_SECONDS = 60
 

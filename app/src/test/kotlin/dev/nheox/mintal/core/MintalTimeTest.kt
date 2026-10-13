@@ -3,6 +3,7 @@ package dev.nheox.mintal.core
 import dev.nheox.mintal.core.time.MintalTime
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.time.ZoneId
 
 class MintalTimeTest {
@@ -23,6 +24,28 @@ class MintalTimeTest {
         assertEquals("25 min", MintalTime.formatDuration(25 * 60))
         assertEquals("1 h", MintalTime.formatDuration(3600))
         assertEquals("1 h 25 min", MintalTime.formatDuration(5100))
+    }
+
+    @Test
+    fun `by default a new day begins at midnight in the device's own zone`() {
+        // Santiago is UTC-3 here, so local midnight on 2026-10-13 is 03:00 UTC. The day
+        // bucket has to turn over on the user's clock, not on the stored UTC instant.
+        val santiago = ZoneId.of("America/Santiago")
+        val localMidnight = LocalDate.of(2026, 10, 13)
+            .atStartOfDay(santiago)
+            .toInstant()
+            .toEpochMilli()
+        val expected = LocalDate.of(2026, 10, 13).toEpochDay()
+
+        assertEquals(expected, MintalTime.epochDayOf(localMidnight, santiago, dayStartMinutes = 0))
+        assertEquals(
+            expected - 1,
+            MintalTime.epochDayOf(localMidnight - 1, santiago, dayStartMinutes = 0),
+        )
+        assertEquals(
+            localMidnight,
+            MintalTime.startOfDayMillis(expected, santiago, dayStartMinutes = 0),
+        )
     }
 
     @Test

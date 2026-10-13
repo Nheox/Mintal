@@ -3,16 +3,18 @@ package dev.nheox.mintal.domain
 import dev.nheox.mintal.core.model.FlowerForm
 import dev.nheox.mintal.core.model.GrowthHabit
 import dev.nheox.mintal.core.model.LeafAttachment
+import dev.nheox.mintal.core.model.LeafFlush
 import dev.nheox.mintal.core.model.LeafHue
 import dev.nheox.mintal.core.model.LeafMargin
 import dev.nheox.mintal.core.model.LeafShape
+import dev.nheox.mintal.core.model.LeafSurface
+import dev.nheox.mintal.core.model.Pubescence
 import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.model.SpeciesArt
 import dev.nheox.mintal.core.model.StemHue
 import dev.nheox.mintal.domain.milestone.MilestoneEngine
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class MilestoneEngineTest {
@@ -27,11 +29,16 @@ class MilestoneEngineTest {
         art = SpeciesArt(
             leafShape = LeafShape.OVATE,
             margin = LeafMargin.SERRATE,
+            surface = LeafSurface.SMOOTH,
+            pubescence = Pubescence.NONE,
+            flush = LeafFlush.NONE,
             habit = GrowthHabit.UPRIGHT,
             leafScale = 1f,
             leafHue = LeafHue.LEAF_MID,
             stemHue = StemHue.STEM_GREEN,
             attachment = LeafAttachment.SESSILE,
+            stemHairy = false,
+            variegated = false,
             flower = FlowerForm.SLENDER_SPIKE,
         ),
     )
@@ -43,25 +50,47 @@ class MilestoneEngineTest {
     )
 
     @Test
-    fun `the starter mint is unlocked with no focus at all`() {
-        assertTrue(MilestoneEngine.isUnlocked(catalogue[0], 0))
-        assertFalse(MilestoneEngine.isUnlocked(catalogue[1], 0))
+    fun `the first slot is open before any focus at all`() {
+        assertEquals(1, MilestoneEngine.earnedSlots(catalogue, 0))
+        assertEquals(1, MilestoneEngine.pendingChoices(catalogue, 0, chosenCount = 0))
     }
 
     @Test
     fun `a threshold is crossed exactly at its second, not a second before`() {
-        assertFalse(MilestoneEngine.isUnlocked(catalogue[1], 120 * 60 - 1))
-        assertTrue(MilestoneEngine.isUnlocked(catalogue[1], 120 * 60))
+        assertEquals(1, MilestoneEngine.earnedSlots(catalogue, 120 * 60 - 1))
+        assertEquals(2, MilestoneEngine.earnedSlots(catalogue, 120 * 60))
     }
 
     @Test
-    fun `newly unlocked only reports what has not been stamped`() {
-        val newly = MilestoneEngine.newlyUnlocked(
-            catalog = catalogue,
-            alreadyStamped = setOf("spicata"),
-            totalSuccessfulSeconds = 120 * 60,
+    fun `choosing spends a slot, and the slot count is what the time earned`() {
+        val total = 300 * 60
+        assertEquals(3, MilestoneEngine.earnedSlots(catalogue, total))
+        assertEquals(3, MilestoneEngine.pendingChoices(catalogue, total, chosenCount = 0))
+        assertEquals(1, MilestoneEngine.pendingChoices(catalogue, total, chosenCount = 2))
+        assertEquals(0, MilestoneEngine.pendingChoices(catalogue, total, chosenCount = 3))
+    }
+
+    @Test
+    fun `nothing is ever taken back when history shrinks`() {
+        // A restored backup, or a deleted session, can leave more mints chosen than the
+        // remaining time earns. Revoking one would punish the player for a repair.
+        assertEquals(0, MilestoneEngine.pendingChoices(catalogue, 0, chosenCount = 3))
+    }
+
+    @Test
+    fun `the catalogue cannot be over-spent`() {
+        val enormous = 10_000 * 60
+        assertEquals(
+            0,
+            MilestoneEngine.pendingChoices(catalogue, enormous, chosenCount = catalogue.size),
         )
-        assertEquals(listOf("piperita"), newly.map { it.id })
+    }
+
+    @Test
+    fun `the next milestone is the cheapest threshold not yet reached`() {
+        assertEquals(120, MilestoneEngine.nextThresholdMinutes(catalogue, 0))
+        assertEquals(300, MilestoneEngine.nextThresholdMinutes(catalogue, 120 * 60))
+        assertNull(MilestoneEngine.nextThresholdMinutes(catalogue, 300 * 60))
     }
 
     @Test
@@ -72,8 +101,7 @@ class MilestoneEngineTest {
     }
 
     @Test
-    fun `next milestone is the cheapest one still locked`() {
-        assertEquals("piperita", MilestoneEngine.nextMilestone(catalogue, 0)?.id)
-        assertEquals("suaveolens", MilestoneEngine.nextMilestone(catalogue, 120 * 60)?.id)
+    fun `thresholds are the catalogue's, in order, with no duplicates`() {
+        assertEquals(listOf(0, 120, 300), MilestoneEngine.thresholdsMinutes(catalogue.reversed()))
     }
 }

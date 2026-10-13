@@ -40,6 +40,8 @@ import dev.nheox.mintal.data.prefs.ThemeChoice
 import dev.nheox.mintal.service.UsageAccess
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
+import dev.nheox.mintal.ui.permissions.MintalPermission
+import dev.nheox.mintal.ui.permissions.PermissionRationaleDialog
 
 /** Settings (spec §4). Every permission is explained here before it is ever requested. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -57,6 +59,7 @@ fun SettingsScreen(
     var showDayStartDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<Uri?>(null) }
+    var explaining by remember { mutableStateOf<MintalPermission?>(null) }
 
     val exportCsv = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv"),
@@ -110,8 +113,11 @@ fun SettingsScreen(
                         )
                         Text(
                             text = "${(settings.dayStartMinutes / 60).toString().padStart(2, '0')}:00" +
-                                " — a session finished after midnight but before this hour " +
-                                "still counts as the previous day",
+                                ", this device's local time. Days, streaks and the daily " +
+                                "statistics all turn over then; at the default of 00:00 " +
+                                "that is plain local midnight. Set it later and a session " +
+                                "finished after midnight but before that hour still counts " +
+                                "as the previous day.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -161,7 +167,13 @@ fun SettingsScreen(
                 )
                 if (settings.detectForegroundApp && !UsageAccess.isGranted(context)) {
                     OutlinedButton(
-                        onClick = { context.startActivity(UsageAccess.settingsIntent()) },
+                        onClick = {
+                            if (MintalPermission.USAGE_ACCESS.key in settings.dismissedPermissionNotes) {
+                                runCatching { context.startActivity(UsageAccess.settingsIntent()) }
+                            } else {
+                                explaining = MintalPermission.USAGE_ACCESS
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Grant Usage Access in system settings") }
                 }
@@ -218,7 +230,13 @@ fun SettingsScreen(
             SectionCard(title = "Device") {
                 OutlinedButton(
                     onClick = {
-                        runCatching { context.startActivity(viewModel.batteryOptimisationIntent()) }
+                        if (MintalPermission.BATTERY.key in settings.dismissedPermissionNotes) {
+                            runCatching {
+                                context.startActivity(viewModel.batteryOptimisationIntent())
+                            }
+                        } else {
+                            explaining = MintalPermission.BATTERY
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Ask Android not to kill running sessions") }
@@ -231,12 +249,80 @@ fun SettingsScreen(
                 )
             }
 
+            SectionCard(title = "Permissions") {
+                Text(
+                    text = "Mintal asks for four install-time permissions it cannot run " +
+                        "without — a foreground service, a wake lock, a notification and " +
+                        "vibration — and nothing else unless you turn it on. There is no " +
+                        "internet permission. Each explanation below is the one shown " +
+                        "before the request, and stays here even if you dismissed it.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                MintalPermission.entries.forEach { permission ->
+                    OutlinedButton(
+                        onClick = { explaining = permission },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) { Text(permission.title) }
+                }
+            }
+
+            SectionCard(title = "Support Mintal") {
+                Text(
+                    text = "Mintal is free software with nothing for sale: no ads, no " +
+                        "accounts, no in-app purchases, no analytics. If it has been " +
+                        "useful, you can buy me a coffee. The link opens in your browser " +
+                        "— the app still has no internet permission of its own.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { runCatching { context.startActivity(Donation.intent()) } },
+                    enabled = Donation.isConfigured,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Buy me a coffee") }
+                if (!Donation.isConfigured) {
+                    Text(
+                        text = "No donation address is set in this build yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+
             OutlinedButton(onClick = onOpenAbout, modifier = Modifier.fillMaxWidth()) {
                 Text("About Mintal")
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    explaining?.let { permission ->
+        PermissionRationaleDialog(
+            permission = permission,
+            hideInFuture = permission.key in settings.dismissedPermissionNotes,
+            onHideInFutureChange = { dismissed ->
+                viewModel.setPermissionNoteDismissed(permission.key, dismissed)
+            },
+            onGrant = {
+                val intent = when (permission) {
+                    MintalPermission.NOTIFICATIONS -> viewModel.notificationSettingsIntent()
+                    MintalPermission.USAGE_ACCESS -> UsageAccess.settingsIntent()
+                    MintalPermission.BATTERY -> viewModel.batteryOptimisationIntent()
+                }
+                runCatching { context.startActivity(intent) }
+                explaining = null
+            },
+            onDismiss = { explaining = null },
+            // From here the runtime prompt is no longer available — Android stops
+            // offering it — so the honest label is where the switch actually is.
+            grantLabel = when (permission) {
+                MintalPermission.NOTIFICATIONS -> "Open notification settings"
+                else -> permission.grantLabel
+            },
+            dismissLabel = "Close",
+        )
     }
 
     if (showDayStartDialog) {

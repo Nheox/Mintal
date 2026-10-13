@@ -2,7 +2,6 @@ package dev.nheox.mintal.domain.session
 
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.model.SessionOutcome
-import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.db.entity.SessionEntity
@@ -46,7 +45,8 @@ sealed interface SessionResult {
         val actualSeconds: Int,
         val plannedSeconds: Int,
         val speciesId: String,
-        val newlyUnlocked: List<Species>,
+        /** Mints earned and not yet picked, so the result screen can offer the choice. */
+        val pendingUnlockChoices: Int,
     ) : SessionResult
 
     /** A count-up session under the minimum: not recorded at all (spec §5.4). */
@@ -193,18 +193,16 @@ class SessionController @Inject constructor(
                 timezoneId = MintalTime.systemZone().id,
             )
             val id = store.record(entity)
-            val unlocked = if (outcome.isSuccess) {
-                store.refreshUnlocks(endedAt)
-            } else {
-                emptyList()
-            }
+            // Asked after the row is written, so this session's own time counts toward
+            // the threshold it may have just crossed.
+            val pending = store.pendingUnlockChoices()
             _result.value = SessionResult.Recorded(
                 sessionId = id,
                 outcome = outcome,
                 actualSeconds = actualSeconds,
                 plannedSeconds = current.plannedSeconds,
                 speciesId = current.speciesId,
-                newlyUnlocked = unlocked,
+                pendingUnlockChoices = pending,
             )
             // Cleared last, and only once the result exists. Clearing it first leaves a
             // window — the database write — where the UI sees neither a running session

@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +48,8 @@ data class SpeciesUiState(
     val statuses: List<SpeciesStatus> = emptyList(),
     val totalSuccessfulSeconds: Int = 0,
     val selectedId: String = "",
-    val nextMilestone: Species? = null,
+    val nextMilestoneMinutes: Int? = null,
+    val pendingChoices: Int = 0,
     val progress: Float = 0f,
 )
 
@@ -61,13 +64,15 @@ class SpeciesViewModel @Inject constructor(
         speciesRepository.observeStatuses(),
         sessionRepository.observeSuccessfulSecondsTotal(),
         preferences.settings,
-    ) { statuses, total, settings ->
+        speciesRepository.observePendingChoices(),
+    ) { statuses, total, settings, pending ->
         val catalogue = statuses.map { it.species }
         SpeciesUiState(
             statuses = statuses,
             totalSuccessfulSeconds = total,
             selectedId = settings.selectedSpeciesId,
-            nextMilestone = MilestoneEngine.nextMilestone(catalogue, total),
+            nextMilestoneMinutes = MilestoneEngine.nextThresholdMinutes(catalogue, total),
+            pendingChoices = pending,
             progress = MilestoneEngine.progressToNext(catalogue, total),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SpeciesUiState())
@@ -80,7 +85,7 @@ class SpeciesViewModel @Inject constructor(
  * milestone that earns them. v2 presents these as Herbarium cards; the data is the same.
  */
 @Composable
-fun SpeciesScreen(onBack: () -> Unit) {
+fun SpeciesScreen(onBack: () -> Unit, onChooseMint: () -> Unit) {
     val viewModel: SpeciesViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -97,10 +102,11 @@ fun SpeciesScreen(onBack: () -> Unit) {
                             "successful focus so far.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    val next = state.nextMilestone
+                    val next = state.nextMilestoneMinutes
                     if (next != null) {
                         Text(
-                            text = "Next: ${next.commonName} at ${next.unlockMinutes / 60} h.",
+                            text = "Next milestone at ${next / 60} h — and you pick which " +
+                                "mint fills it.",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 6.dp),
                         )
@@ -110,17 +116,30 @@ fun SpeciesScreen(onBack: () -> Unit) {
                         )
                     } else {
                         Text(
-                            text = "Every mint in the catalogue is unlocked.",
+                            text = "Every milestone is behind you.",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 6.dp),
                         )
+                    }
+                    if (state.pendingChoices > 0) {
+                        Button(
+                            onClick = onChooseMint,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        ) {
+                            Text(
+                                if (state.pendingChoices == 1) {
+                                    "Choose your next mint"
+                                } else {
+                                    "Choose ${state.pendingChoices} mints"
+                                },
+                            )
+                        }
                     }
                 }
             }
 
             items(items = state.statuses, key = { it.species.id }) { status ->
-                val unlocked = status.isUnlocked ||
-                    MilestoneEngine.isUnlocked(status.species, state.totalSuccessfulSeconds)
+                val unlocked = status.isUnlocked
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -171,8 +190,8 @@ fun SpeciesScreen(onBack: () -> Unit) {
                                 }
                             } else {
                                 Text(
-                                    text = "Unlocks at ${status.species.unlockMinutes / 60} h " +
-                                        "of successful focus.",
+                                    text = "Still locked — pick it at any milestone you " +
+                                        "reach from here.",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 6.dp),
