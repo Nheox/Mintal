@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +42,7 @@ import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
 
 /** Settings (spec §4). Every permission is explained here before it is ever requested. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -101,15 +104,42 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Day starts at", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = "A new day begins at",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                         Text(
                             text = "${(settings.dayStartMinutes / 60).toString().padStart(2, '0')}:00" +
-                                " — decides which day a late-night session belongs to",
+                                " — a session finished after midnight but before this hour " +
+                                "still counts as the previous day",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     TextButton(onClick = { showDayStartDialog = true }) { Text("Change") }
+                }
+
+                Text(
+                    text = "Week starts on",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+                Text(
+                    text = "Used by the weekly statistics range.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(0 to "Locale default", 1 to "Monday", 7 to "Sunday").forEach { choice ->
+                        FilterChip(
+                            selected = settings.firstWeekdayOverride == choice.first,
+                            onClick = { viewModel.setFirstWeekday(choice.first) },
+                            label = { Text(choice.second) },
+                        )
+                    }
                 }
             }
 
@@ -142,7 +172,7 @@ fun SettingsScreen(
             }
 
             SectionCard(title = "Appearance") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ThemeChoice.entries.forEach { choice ->
                         FilterChip(
                             selected = settings.theme == choice,

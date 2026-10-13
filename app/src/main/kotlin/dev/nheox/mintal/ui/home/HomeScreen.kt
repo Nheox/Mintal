@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,11 +29,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +56,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalTime
+import dev.nheox.mintal.data.repository.TagRepository
 import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.ui.components.GrowthTrack
 import dev.nheox.mintal.ui.components.MintalTopBar
@@ -69,7 +74,7 @@ import kotlin.math.sin
  * carrying a live detail rather than just an icon. This is a navigation and motion
  * treatment, not a change to which screens exist.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     onOpenGrove: () -> Unit,
@@ -149,7 +154,7 @@ fun HomeScreen(
             )
 
             SectionCard(title = "Session setup") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = state.mode == SessionMode.COUNTDOWN,
                         onClick = { viewModel.setMode(SessionMode.COUNTDOWN) },
@@ -168,10 +173,11 @@ fun HomeScreen(
                         minutes = state.minutes,
                         onMinutesChange = viewModel::setMinutes,
                     )
-                    Row(
+                    // Wraps instead of pushing a button off the edge in a narrow window.
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         OutlinedButton(
                             onClick = {
@@ -182,7 +188,7 @@ fun HomeScreen(
                             text = "${state.minutes} min",
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.align(Alignment.CenterVertically),
                         )
                         OutlinedButton(
                             onClick = {
@@ -278,6 +284,7 @@ fun HomeScreen(
     }
 
     if (showTagPicker) {
+        var newTagName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showTagPicker = false },
             title = { Text("Choose a tag") },
@@ -297,6 +304,34 @@ fun HomeScreen(
                             },
                         ) { Text(tag.name) }
                     }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    OutlinedTextField(
+                        value = newTagName,
+                        onValueChange = {
+                            if (it.length <= TagRepository.MAX_NAME_LENGTH) newTagName = it
+                        },
+                        label = { Text("New tag") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(
+                            enabled = newTagName.isNotBlank(),
+                            onClick = {
+                                viewModel.createTag(newTagName)
+                                newTagName = ""
+                                showTagPicker = false
+                            },
+                        ) { Text("Create and use") }
+                        TextButton(
+                            onClick = {
+                                showTagPicker = false
+                                onOpenTags()
+                            },
+                        ) { Text("Manage tags") }
+                    }
                 }
             },
             confirmButton = {
@@ -304,110 +339,3 @@ fun HomeScreen(
             },
         )
     }
-}
-
-private data class HubTileSpec(
-    val label: String,
-    val detail: String,
-    val onClick: () -> Unit,
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HubRing(
-    centreLabel: String,
-    centreDetail: String,
-    onStart: () -> Unit,
-    tiles: List<HubTileSpec>,
-) {
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(340.dp),
-    ) {
-        // Everything is sized from the space actually available. With a fixed radius and
-        // fixed tiles, a narrow screen pushes the tiles through the centre button.
-        val shortest = minOf(maxWidth, maxHeight)
-        val tileSize = (shortest * 0.30f).coerceIn(80.dp, 112.dp)
-        // Keeps the diagonal tiles inside the box: 0.707 * radius + half a tile + margin.
-        val radius = ((shortest / 2f) - (tileSize / 2f) - 8.dp) * 1.414f
-        val centreSize = (shortest * 0.42f)
-            .coerceIn(96.dp, 160.dp)
-            // ...and never closer than 10dp to the ring of tiles.
-            .coerceAtMost((radius - tileSize / 2f - 10.dp) * 2f)
-            .coerceAtLeast(72.dp)
-
-        tiles.forEachIndexed { index, tile ->
-            val angle = (-135f + index * 90f) * PI.toFloat() / 180f
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(x = radius * cos(angle), y = radius * sin(angle)),
-            ) {
-                HubTile(spec = tile, size = tileSize)
-            }
-        }
-        Surface(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(centreSize),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-            onClick = onStart,
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = centreLabel,
-                    style = MintalTextStyles.timerSmall,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-                Text(
-                    text = centreDetail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "START",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HubTile(spec: HubTileSpec, size: Dp) {
-    Surface(
-        modifier = Modifier.size(size),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        onClick = spec.onClick,
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = spec.label,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = spec.detail,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}

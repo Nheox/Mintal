@@ -128,7 +128,7 @@ fun GroveCanvas(
             val axis = atan2(end.y - start.y, end.x - start.x)
             val segmentLength = hypot((end.x - start.x).toDouble(), (end.y - start.y).toDouble())
                 .toFloat()
-            val leafLength = (segmentLength * 0.34f * species.art.leafScale).coerceAtLeast(3f)
+            val leafLength = (segmentLength * 0.46f * species.art.leafScale).coerceAtLeast(4f)
             val pairs = segment.leafCount / 2
             for (pair in 0 until pairs.coerceAtLeast(1)) {
                 val along = 0.3f + 0.65f * (pair.toFloat() / pairs.coerceAtLeast(1))

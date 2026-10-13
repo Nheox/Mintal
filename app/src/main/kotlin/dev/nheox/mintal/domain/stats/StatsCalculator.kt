@@ -5,7 +5,9 @@ import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.db.entity.SessionEntity
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 enum class StatsRange { DAY, WEEK, MONTH, YEAR }
 
@@ -183,7 +185,7 @@ object StatsCalculator {
                 val monthStart = month.withDayOfMonth(1).toEpochDay()
                 val monthEnd = month.withDayOfMonth(1).plusMonths(1).toEpochDay()
                 StatsBucket(
-                    label = month.month.value.toString(),
+                    label = month.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
                     seconds = sessions
                         .filter {
                             val day = MintalTime.epochDayOf(it.startedAt, zone, dayStartMinutes)

@@ -23,14 +23,16 @@ private val LightScheme = lightColorScheme(
     onSecondaryContainer = P.Sky20,
     tertiary = P.Mint60,
     onTertiary = Color.White,
-    background = P.Mint99,
+    // The page, the cards and their edges have to be three visibly different things.
+    // Mint99 page against a Mint95 card was a 4% difference: the boxes disappeared.
+    background = P.Mint95,
     onBackground = P.Ink,
     surface = P.Paper,
     onSurface = P.Ink,
-    surfaceVariant = P.Mint95,
-    onSurfaceVariant = P.InkMuted,
-    outline = P.Mint60,
-    outlineVariant = P.Mint80,
+    surfaceVariant = P.Mint90,
+    onSurfaceVariant = P.Mint20,
+    outline = P.Mint40,
+    outlineVariant = P.Mint60,
     error = Color(0xFF8E3B2F),
     onError = Color.White,
 )

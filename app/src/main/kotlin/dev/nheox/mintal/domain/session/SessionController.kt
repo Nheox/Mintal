@@ -167,7 +167,6 @@ class SessionController @Inject constructor(
     private suspend fun finish(outcome: SessionOutcome, actualSeconds: Int) {
         finishLock.withLock {
             val current = _running.value ?: return
-            _running.value = null
             distracted = false
             graceStartedElapsed = null
 
@@ -175,6 +174,7 @@ class SessionController @Inject constructor(
                 actualSeconds < SessionRules.COUNT_UP_MIN_SECONDS
             ) {
                 _result.value = SessionResult.Discarded
+                _running.value = null
                 return
             }
 
@@ -206,6 +206,11 @@ class SessionController @Inject constructor(
                 speciesId = current.speciesId,
                 newlyUnlocked = unlocked,
             )
+            // Cleared last, and only once the result exists. Clearing it first leaves a
+            // window — the database write — where the UI sees neither a running session
+            // nor a result, reads that as an abandoned session, and sends the user home
+            // before the result screen ever gets its turn.
+            _running.value = null
         }
     }
 }

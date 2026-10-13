@@ -1,6 +1,8 @@
 package dev.nheox.mintal.ui.session
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +39,7 @@ import dev.nheox.mintal.ui.components.StatLine
  * plus the rating and note — both offered even when the session failed, because a failed
  * session is often the one worth annotating.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SessionResultScreen(
     onDone: () -> Unit,
@@ -120,7 +123,7 @@ fun SessionResultScreen(
             }
 
             SectionCard(title = "How well did that go?") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SessionRules.RATING_RANGE.forEach { star ->
                         FilterChip(
                             selected = state.rating == star,

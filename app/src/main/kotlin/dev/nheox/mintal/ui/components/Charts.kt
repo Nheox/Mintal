@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -37,64 +38,108 @@ fun FocusBarChart(
     modifier: Modifier = Modifier,
     height: Dp = 168.dp,
     labelEvery: Int = 1,
+    valueFormatter: (Int) -> String = { MintalTime.formatDuration(it) },
+    xAxisLabel: String? = null,
 ) {
     val palette = mintalPalette
     val maxValue = (values.maxOrNull() ?: 0).coerceAtLeast(1)
     val total = values.sum()
     Column(modifier = modifier.fillMaxWidth()) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height)
-                .semantics {
-                    contentDescription = "Focus time per bucket, total ${MintalTime.formatDuration(total)}"
-                },
-        ) {
-            val slot = size.width / values.size.coerceAtLeast(1)
-            val barWidth = (slot * 0.62f).coerceAtLeast(2f)
-
-            // Three guide lines, enough to read heights without a cluttered grid.
-            for (step in 1..3) {
-                val y = size.height * (1f - step / 4f)
-                drawLine(
-                    color = palette.chartGrid,
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = 1f,
-                )
-            }
-
-            values.forEachIndexed { index, value ->
-                val barHeight = size.height * (value.toFloat() / maxValue)
-                if (barHeight > 0.5f) {
-                    drawRoundRect(
-                        color = palette.chartBar,
-                        topLeft = Offset(
-                            x = slot * index + (slot - barWidth) / 2f,
-                            y = size.height - barHeight,
-                        ),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = CornerRadius(barWidth / 3f, barWidth / 3f),
-                    )
-                }
-            }
-
-            drawLine(
-                color = palette.chartGrid,
-                start = Offset(0f, size.height),
-                end = Offset(size.width, size.height),
-                strokeWidth = 2f,
-            )
-        }
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            labels.forEachIndexed { index, label ->
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Without a scale the bars only say "more" and "less". The gridlines sit at
+            // the peak and at half the peak, and these labels name them.
+            Column(
+                modifier = Modifier.height(height).padding(end = 6.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End,
+            ) {
                 Text(
-                    text = if (index % labelEvery == 0) label else "",
+                    text = valueFormatter(maxValue),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
                 )
+                Text(
+                    text = valueFormatter(maxValue / 2),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "0",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height)
+                        .semantics {
+                            contentDescription =
+                                "Focus time per bucket, peak ${valueFormatter(maxValue)}, " +
+                                    "total ${MintalTime.formatDuration(total)}"
+                        },
+                ) {
+                    val slot = size.width / values.size.coerceAtLeast(1)
+                    val barWidth = (slot * 0.62f).coerceAtLeast(2f)
+
+                    // Top line is the peak, middle line is half of it: the two the labels name.
+                    for (fraction in listOf(0f, 0.5f)) {
+                        val y = size.height * fraction
+                        drawLine(
+                            color = palette.chartGrid,
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = 1f,
+                        )
+                    }
+
+                    values.forEachIndexed { index, value ->
+                        val barHeight = size.height * (value.toFloat() / maxValue)
+                        if (barHeight > 0.5f) {
+                            drawRoundRect(
+                                color = palette.chartBar,
+                                topLeft = Offset(
+                                    x = slot * index + (slot - barWidth) / 2f,
+                                    y = size.height - barHeight,
+                                ),
+                                size = Size(barWidth, barHeight),
+                                cornerRadius = CornerRadius(barWidth / 3f, barWidth / 3f),
+                            )
+                        }
+                    }
+
+                    drawLine(
+                        color = palette.chartGrid,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = 2f,
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    labels.forEachIndexed { index, label ->
+                        Text(
+                            text = if (index % labelEvery == 0) label else "",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                if (xAxisLabel != null) {
+                    Text(
+                        text = xAxisLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                    )
+                }
             }
         }
     }

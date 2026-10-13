@@ -40,8 +40,10 @@ class SessionControllerTest {
     private class FakeStore : SessionStore {
         val recorded = mutableListOf<SessionEntity>()
         var unlockRefreshes = 0
+        var onRecord: (() -> Unit)? = null
 
         override suspend fun record(session: SessionEntity): Long {
+            onRecord?.invoke()
             recorded += session
             return recorded.size.toLong()
         }
@@ -185,6 +187,23 @@ class SessionControllerTest {
 
         controller.clearResult()
         assertNull(controller.result.value)
+    }
+
+    @Test
+    fun `the running session outlives the write, so the UI never sees neither`() = runTest {
+        // Clearing the running session before the row is written leaves a window where the
+        // screen sees no session and no result, reads it as abandoned, and skips the
+        // rating prompt entirely. This is that bug, pinned down.
+        var sawSessionDuringWrite = false
+        store.onRecord = { sawSessionDuringWrite = controller.running.value != null }
+
+        controller.start(SessionMode.COUNTDOWN, 5 * 60, "spicata", null)
+        clock.advanceSeconds(5 * 60L)
+        controller.tick()
+
+        assertTrue(sawSessionDuringWrite, "the session was cleared before the result existed")
+        assertNull(controller.running.value)
+        assertTrue(controller.result.value is SessionResult.Recorded)
     }
 
     @Test

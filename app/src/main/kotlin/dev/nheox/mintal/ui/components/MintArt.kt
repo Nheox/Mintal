@@ -38,12 +38,14 @@ private const val PROFILE_STEPS = 12
 /** Width at a point along the midrib: 0f at the base, 0f at the tip. */
 private fun leafProfile(t: Float, shape: LeafShape): Float {
     val bell = sin(PI.toFloat() * t.coerceIn(0f, 1f))
+    // Widths are generous on purpose: at emblem and Grove sizes a botanically accurate
+    // narrow blade renders as a line, and the whole point is telling the species apart.
     return when (shape) {
-        LeafShape.SPEAR -> bell.pow(0.75f) * (1f - t * 0.45f) * 0.30f
-        LeafShape.OVATE -> bell.pow(0.80f) * 0.34f
-        LeafShape.ROUND -> bell.pow(0.65f) * 0.42f
-        LeafShape.LANCEOLATE -> bell.pow(1.25f) * 0.22f
-        LeafShape.NEEDLE -> bell.pow(1.6f) * 0.12f
+        LeafShape.SPEAR -> bell.pow(0.75f) * (1f - t * 0.45f) * 0.44f
+        LeafShape.OVATE -> bell.pow(0.80f) * 0.52f
+        LeafShape.ROUND -> bell.pow(0.60f) * 0.68f
+        LeafShape.LANCEOLATE -> bell.pow(1.25f) * 0.32f
+        LeafShape.NEEDLE -> bell.pow(1.6f) * 0.17f
     }
 }
 
@@ -110,6 +112,14 @@ fun DrawScope.drawLeafPair(
         )
         drawPath(path = path, color = leafColour)
         drawPath(path = path, color = stemColour, style = Stroke(width = outlineWidth))
+        // The midrib is what makes a green shape read as a leaf rather than a blob.
+        drawLine(
+            color = stemColour.copy(alpha = 0.65f),
+            start = node,
+            end = tip,
+            strokeWidth = outlineWidth,
+            cap = StrokeCap.Round,
+        )
     }
 }
 
@@ -143,7 +153,7 @@ fun DrawScope.drawSprig(
     )
 
     val pairs = leafPairs.coerceAtLeast(1)
-    val baseLength = heightPx * 0.42f * species.art.leafScale * if (wilted) 0.6f else 1f
+    val baseLength = heightPx * 0.50f * species.art.leafScale * if (wilted) 0.6f else 1f
     for (pair in 0 until pairs) {
         val fraction = pair.toFloat() / pairs
         val along = 0.25f + 0.72f * fraction

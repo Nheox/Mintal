@@ -1,6 +1,8 @@
 package dev.nheox.mintal.ui.stats
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +37,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 /** Statistics (spec §5.7), including the rating line chart §5.5 asks for. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StatsScreen(onBack: () -> Unit) {
     val viewModel: StatsViewModel = hiltViewModel()
@@ -48,7 +51,7 @@ fun StatsScreen(onBack: () -> Unit) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatsRange.entries.forEach { range ->
                     FilterChip(
                         selected = state.range == range,
@@ -99,7 +102,7 @@ fun StatsScreen(onBack: () -> Unit) {
                 StatLine(
                     "Best focus day",
                     result.bestWeekday?.let { weekday ->
-                        DayOfWeek.of(weekday).getDisplayName(TextStyle.FULL, Locale.getDefault())
+                        DayOfWeek.of(weekday).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
                     } ?: "—",
                 )
                 StatLine(
@@ -118,6 +121,12 @@ fun StatsScreen(onBack: () -> Unit) {
                         StatsRange.WEEK -> 1
                         StatsRange.MONTH -> 5
                         StatsRange.YEAR -> 1
+                    },
+                    xAxisLabel = when (state.range) {
+                        StatsRange.DAY -> "hour of day"
+                        StatsRange.WEEK -> "day of month"
+                        StatsRange.MONTH -> "day of month"
+                        StatsRange.YEAR -> "month"
                     },
                 )
             }
@@ -138,6 +147,9 @@ fun StatsScreen(onBack: () -> Unit) {
                 FocusBarChart(
                     values = result.ratingDistribution,
                     labels = listOf("1", "2", "3", "4", "5"),
+                    height = 120.dp,
+                    valueFormatter = { count -> count.toString() },
+                    xAxisLabel = "rating",
                 )
             }
 

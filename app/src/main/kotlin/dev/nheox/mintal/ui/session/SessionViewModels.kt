@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.model.SessionOutcome
 import dev.nheox.mintal.core.model.Species
+import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.data.db.entity.SessionEntity
 import dev.nheox.mintal.data.db.entity.TagEntity
 import dev.nheox.mintal.data.prefs.MintalPreferences
@@ -57,6 +58,7 @@ class SessionSetupViewModel @Inject constructor(
     private val tagRepository: TagRepository,
     private val sessionRepository: SessionRepository,
     private val controller: SessionController,
+    private val clock: MintalClock,
 ) : ViewModel() {
 
     val running: StateFlow<RunningSession?> = controller.running
@@ -94,6 +96,17 @@ class SessionSetupViewModel @Inject constructor(
     fun setMode(mode: SessionMode) = viewModelScope.launch { preferences.setMode(mode) }
 
     fun selectTag(tagId: Long?) = viewModelScope.launch { preferences.setSelectedTag(tagId) }
+
+    /**
+     * Tagging a session should not mean leaving the screen you were about to start it
+     * from, so the picker can create one outright. Duplicate names are rejected by the
+     * repository, which leaves the current tag alone.
+     */
+    fun createTag(name: String) = viewModelScope.launch {
+        val colourIndex = state.value.tags.size % TagRepository.TAG_PALETTE_SIZE
+        val id = tagRepository.create(name, colourIndex, clock.nowMillis())
+        if (id != null) preferences.setSelectedTag(id)
+    }
 
     /** Starting a session is the service's job from here on (spec §5.2). */
     fun start() {

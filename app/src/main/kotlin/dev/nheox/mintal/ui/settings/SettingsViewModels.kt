@@ -67,6 +67,11 @@ class SettingsViewModel @Inject constructor(
 
     fun setMode(mode: SessionMode) = viewModelScope.launch { preferences.setMode(mode) }
 
+    /** 0 follows the device locale; otherwise 1 = Monday .. 7 = Sunday, as in java.time. */
+    fun setFirstWeekday(day: Int) = viewModelScope.launch {
+        preferences.setFirstWeekdayOverride(day)
+    }
+
     fun csvFileName(): String = backupManager.suggestedCsvName()
 
     fun backupFileName(): String = backupManager.suggestedBackupName()

@@ -1,6 +1,8 @@
 package dev.nheox.mintal.ui.grove
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +37,7 @@ import dev.nheox.mintal.ui.components.SectionCard
 import dev.nheox.mintal.ui.components.StatLine
 
 /** Session detail (spec §5.6): note, tag and rating are editable; the session can be deleted. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SessionDetailScreen(onBack: () -> Unit) {
     val viewModel: SessionDetailViewModel = hiltViewModel()
@@ -78,7 +81,7 @@ fun SessionDetailScreen(onBack: () -> Unit) {
             }
 
             SectionCard(title = "Rating") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SessionRules.RATING_RANGE.forEach { star ->
                         FilterChip(
                             selected = session.rating == star,

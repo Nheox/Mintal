@@ -16,8 +16,11 @@ object MintalTime {
 
     private val isoOffset: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
     private val timeOfDay: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
-    private val dayLabel: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault())
-    private val monthLabel: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.getDefault())
+    // English, deliberately: every string in the app is English today, and a Spanish
+    // weekday beside English copy reads as a bug. These follow the device locale again as
+    // soon as the UI strings are translated.
+    private val dayLabel: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.ENGLISH)
+    private val monthLabel: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
 
     fun systemZone(): ZoneId = ZoneId.systemDefault()
 

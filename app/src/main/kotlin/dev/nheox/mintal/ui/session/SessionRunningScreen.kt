@@ -1,6 +1,7 @@
 package dev.nheox.mintal.ui.session
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,7 +73,15 @@ fun SessionRunningScreen(
         when (val outcome = result) {
             is SessionResult.Recorded -> onFinished(outcome.sessionId)
             SessionResult.Discarded -> onFinished(-1L)
-            null -> onAbandoned()
+            // The controller now clears a session only once its result exists, so this is
+            // a session that genuinely went away — a restarted process, say. Wait a beat
+            // before concluding that, rather than racing a write we cannot see.
+            null -> {
+                delay(500)
+                if (viewModel.live.value == null && viewModel.result.value == null) {
+                    onAbandoned()
+                }
+            }
         }
     }
 
@@ -99,15 +108,27 @@ fun SessionRunningScreen(
                 Text(text = species.commonName, style = MaterialTheme.typography.titleMedium)
             }
 
-            Text(
-                text = when {
-                    running == null -> "—"
-                    running.mode == SessionMode.COUNTDOWN ->
-                        MintalTime.formatClock(running.remainingSeconds)
-                    else -> MintalTime.formatClock(running.elapsedSeconds)
-                },
-                style = MintalTextStyles.timer,
-            )
+            // In a small multi-window pane the full-size numerals wrap and collide, so
+            // the clock is sized from the width it actually has.
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = when {
+                        running == null -> "—"
+                        running.mode == SessionMode.COUNTDOWN ->
+                            MintalTime.formatClock(running.remainingSeconds)
+                        else -> MintalTime.formatClock(running.elapsedSeconds)
+                    },
+                    style = if (maxWidth < 340.dp) {
+                        MintalTextStyles.timerSmall
+                    } else {
+                        MintalTextStyles.timer
+                    },
+                    maxLines = 1,
+                )
+            }
 
             SessionBar(
                 progress = running?.progress ?: 0f,
