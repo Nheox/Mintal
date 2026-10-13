@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.time.MintalTime
+import dev.nheox.mintal.domain.stats.AxisTicks
 import dev.nheox.mintal.domain.stats.StatsRange
 import dev.nheox.mintal.ui.components.EmptyState
 import dev.nheox.mintal.ui.components.FocusBarChart
@@ -113,15 +114,11 @@ fun StatsScreen(onBack: () -> Unit) {
             }
 
             SectionCard(title = "Focus time") {
+                val bucketSeconds = result.buckets.map { it.seconds }
                 FocusBarChart(
-                    values = result.buckets.map { it.seconds },
+                    values = bucketSeconds,
                     labels = result.buckets.map { it.label },
-                    labelEvery = when (state.range) {
-                        StatsRange.DAY -> 3
-                        StatsRange.WEEK -> 1
-                        StatsRange.MONTH -> 5
-                        StatsRange.YEAR -> 1
-                    },
+                    axis = AxisTicks.durations(bucketSeconds.maxOrNull() ?: 0),
                     xAxisLabel = when (state.range) {
                         StatsRange.DAY -> "hour of day"
                         StatsRange.WEEK -> "day of month"
@@ -148,8 +145,9 @@ fun StatsScreen(onBack: () -> Unit) {
                     values = result.ratingDistribution,
                     labels = listOf("1", "2", "3", "4", "5"),
                     height = 120.dp,
-                    valueFormatter = { count -> count.toString() },
+                    axis = AxisTicks.counts(result.ratingDistribution.maxOrNull() ?: 0),
                     xAxisLabel = "rating",
+                    describeValue = { count -> "$count sessions" },
                 )
             }
 
