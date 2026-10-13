@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The window background is painted before Compose draws its first frame, so without a
+      night variant a dark-theme launch flashes a light screen. Mirrors MintalPaletteValues.Night.
+    -->
+    <color name="mintal_window_background">#0C1511</color>
+</resources>
