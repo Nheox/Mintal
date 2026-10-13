@@ -52,6 +52,9 @@ android {
         unitTests.all {
             it.useJUnitPlatform()
         }
+        // Robolectric renders real Compose UI on the JVM, which needs the app's resources
+        // on the unit-test classpath.
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -103,4 +106,14 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+
+    // Screenshot rendering: Robolectric draws Compose on the JVM, so the UI can be looked
+    // at without an emulator or a device. Robolectric is JUnit 4, hence the vintage engine
+    // alongside the JUnit 5 tests.
+    testImplementation(libs.junit4)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

@@ -21,6 +21,7 @@ import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.ui.theme.mintalPalette
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.sin
 
@@ -37,15 +38,18 @@ private const val PROFILE_STEPS = 12
 
 /** Width at a point along the midrib: 0f at the base, 0f at the tip. */
 private fun leafProfile(t: Float, shape: LeafShape): Float {
-    val bell = sin(PI.toFloat() * t.coerceIn(0f, 1f))
-    // Widths are generous on purpose: at emblem and Grove sizes a botanically accurate
-    // narrow blade renders as a line, and the whole point is telling the species apart.
+    // sin(PI) in Float is -8.7e-8, not 0. Raising that to a fractional power gives NaN,
+    // one NaN point makes the whole leaf path degenerate, and nothing is drawn at all —
+    // which is why every mint rendered as a bare stem.
+    val bell = sin(PI.toFloat() * t.coerceIn(0f, 1f)).coerceAtLeast(0f)
+    // Half-width as a fraction of leaf length, so a value of 0.30 draws a blade roughly
+    // 60% as wide as it is long — about right for an ovate mint leaf.
     return when (shape) {
-        LeafShape.SPEAR -> bell.pow(0.75f) * (1f - t * 0.45f) * 0.44f
-        LeafShape.OVATE -> bell.pow(0.80f) * 0.52f
-        LeafShape.ROUND -> bell.pow(0.60f) * 0.68f
-        LeafShape.LANCEOLATE -> bell.pow(1.25f) * 0.32f
-        LeafShape.NEEDLE -> bell.pow(1.6f) * 0.17f
+        LeafShape.SPEAR -> bell.pow(0.75f) * (1f - t * 0.45f) * 0.34f
+        LeafShape.OVATE -> bell.pow(0.80f) * 0.36f
+        LeafShape.ROUND -> bell.pow(0.60f) * 0.46f
+        LeafShape.LANCEOLATE -> bell.pow(1.25f) * 0.24f
+        LeafShape.NEEDLE -> bell.pow(1.6f) * 0.13f
     }
 }
 
@@ -69,15 +73,25 @@ fun leafPath(
 ): Path {
     val axisX = tip.x - base.x
     val axisY = tip.y - base.y
+    val length = hypot(axisX, axisY)
     val path = Path()
+    if (length < 0.01f) return path
+
+    // The blade is offset along the UNIT perpendicular to the midrib. Offsetting along the
+    // raw axis vector instead multiplies every width by the leaf's length in pixels, which
+    // turns each leaf into a huge spike with only a sliver of it on screen — the "mints are
+    // just green lines" bug.
+    val alongX = axisX / length
+    val alongY = axisY / length
+
     path.moveTo(base.x, base.y)
     for (side in intArrayOf(1, -1)) {
         val range = if (side == 1) 1..PROFILE_STEPS else (PROFILE_STEPS - 1) downTo 0
         for (step in range) {
             val t = step.toFloat() / PROFILE_STEPS
             val width = halfWidth * leafProfile(t, shape) * marginFactor(step, margin)
-            val x = base.x + axisX * t - axisY * width * side
-            val y = base.y + axisY * t + axisX * width * side
+            val x = base.x + axisX * t - alongY * width * side
+            val y = base.y + axisY * t + alongX * width * side
             path.lineTo(x, y)
         }
     }

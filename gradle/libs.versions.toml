@@ -15,6 +15,8 @@ coroutines = "1.10.1"
 junitJupiter = "5.10.2"
 junitPlatform = "1.10.2"
 turbine = "1.2.0"
+junit4 = "4.13.2"
+robolectric = "4.14.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -47,6 +49,11 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junitJupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junitJupiter" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

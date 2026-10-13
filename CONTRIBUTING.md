@@ -36,6 +36,23 @@ settling. That makes some contributions much easier to accept than others.
 3. **Procedural artwork.** The mints are drawn from botanical parameters. An illustrator's
    set would replace `ui/components/MintArt.kt`.
 
+## Looking at the UI without a device
+
+Compose screens can be rendered to PNG on the JVM — no emulator, no phone:
+
+```sh
+./gradlew testDebugUnitTest --tests "*ScreenshotTest*"
+# PNGs land in app/build/screenshots/
+```
+
+They are rendered by Robolectric drawing the view straight to a bitmap. Use them for
+layout, contrast and shape problems; they cannot tell you anything about the foreground
+service, the notification, or how the app feels in the hand.
+
+`LeafGeometryTest` is the companion to that: it asserts every species' leaf has actual
+area in every direction. It exists because a NaN from `sin(PI)` once collapsed every leaf
+path silently, and the app shipped drawing bare stems.
+
 ## House rules
 
 - Kotlin official code style, four-space indent, trailing commas.
