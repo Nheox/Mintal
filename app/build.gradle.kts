@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
     alias(libs.plugins.hilt)
 }
 
@@ -60,8 +61,14 @@ kotlin {
     }
 }
 
+// The Room plugin, rather than a bare room.schemaLocation argument: it gives each variant
+// its own schema directory. Pointing the debug and release KSP tasks at one directory makes
+// them race, and the loser reads a half-written file.
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
 }
 
