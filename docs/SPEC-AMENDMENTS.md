@@ -207,6 +207,14 @@ The principles slide is where the "don't show this again" tick lives, in the foo
 beside Next. The recurring gate afterwards shows the name, the slogan and the three
 promises — not the tutorial, which is a first-run thing.
 
+## §8 — Edge to edge, and the system bars (clarification)
+
+Mintal draws behind the status and navigation bars. Anything anchored to the bottom of a
+screen keeps itself clear of them: both custom bottom bars pad for
+`safeDrawing(Horizontal + Bottom)`, so the background still runs to the edge of the
+display while the controls stay above the phone's back/home/recents buttons. Screens
+without a bottom bar get this from the Scaffold's own content padding.
+
 ## §4 — The slogan and the tutorial (new)
 
 Mintal's line is **"Stay focused, stay mintalized"**. It sits under the name on the

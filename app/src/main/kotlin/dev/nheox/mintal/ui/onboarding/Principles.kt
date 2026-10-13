@@ -3,6 +3,11 @@ package dev.nheox.mintal.ui.onboarding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -94,7 +99,19 @@ fun PrinciplesFooter(
     onAction: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                // Material's Scaffold pads its own BottomAppBar for the system bars but
+                // not a hand-made one, so without this the button sits underneath the
+                // phone's back/home/recents buttons and cannot be pressed at all.
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                    ),
+                )
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
             PrinciplesTick(dismissed = dismissed, onDismissedChange = onDismissedChange)
             Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
             Spacer(modifier = Modifier.height(8.dp))

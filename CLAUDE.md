@@ -145,6 +145,13 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - Chart axis labels are laid out by measuring them, not by dividing the width into equal
   slots: twenty-four equal slivers clip "03" to "0", which is how an hour axis came to
   read "0 0 0 0 1 1 1 2" on a real phone.
+- The app draws edge to edge, and Material's `Scaffold` pads its own `BottomAppBar` for
+  the system bars but **not** a hand-written `bottomBar`. One has to apply
+  `windowInsetsPadding(WindowInsets.safeDrawing.only(Horizontal + Bottom))` itself, or
+  on a phone with on-screen back/home/recents the button sits under them and cannot be
+  pressed. Screens whose content applies the Scaffold's own padding are already fine.
+  `ScreenshotRenderer.render(..., navigationBarPx = 132)` fakes those buttons, because a
+  render on a gesture-navigation device will never show the bug.
 
 ## Conventions
 

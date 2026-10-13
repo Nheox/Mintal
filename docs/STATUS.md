@@ -42,6 +42,7 @@ been exercised by reading the code.
 | No slogan | Added — "Stay focused, stay mintalized", under the name on the principles screen and in About. |
 | No tutorial | Added — a looping three-beat animation (set the timer, keep off the phone, plant a mint), drawn with the app's own plant code rather than shipped as a video. Falls back to plain numbered text where animations are turned off. |
 | First run was one long page | Split into four swipeable slides: name and slogan, the tutorial, the promises, the permission. One idea each, centred, with the action pinned to the bottom. |
+| The phone's nav buttons covered the Next button | Fixed — both custom bottom bars pad for the navigation bar. The renderer can now fake those buttons, so the bug is visible here rather than only on a device. |
 | The notification note had a tick-box | Removed, and with it the whole permission-note dismissal: the note is an advert for the permission with the grant button under it, shown once before Android asks. |
 
 ## Needs the owner before release

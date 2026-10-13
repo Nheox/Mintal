@@ -162,6 +162,43 @@ class PrinciplesScreenshotTest {
     }
 
     @Test
+    fun `the way forward clears a three-button navigation bar`() {
+        // The reported bug: on a phone with on-screen back/home/recents, the Next button
+        // was underneath them.
+        val species = spearmint()
+        val slide = ScreenshotRenderer.render("onboarding-navbar", navigationBarPx = 132) {
+            Slide(ThemeChoice.LIGHT, page = 1) {
+                FocusTutorialFrame(species = species, progress = 0.6f)
+            }
+        }
+        // And the gate, which is the screen seen at every launch.
+        val gate = ScreenshotRenderer.render("principles-navbar", navigationBarPx = 132) {
+            MintalTheme(theme = ThemeChoice.LIGHT) {
+                Scaffold(
+                    bottomBar = {
+                        PrinciplesFooter(
+                            dismissed = false,
+                            onDismissedChange = {},
+                            actionLabel = "Start focusing",
+                            onAction = {},
+                        )
+                    },
+                ) { padding ->
+                    Column(
+                        modifier = Modifier
+                            .padding(padding)
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) { PrinciplesBody() }
+                }
+            }
+        }
+        assertTrue(slide.length() > 0 && gate.length() > 0)
+    }
+
+    @Test
     fun `renders the second and third tutorial beats`() {
         val species = spearmint()
         val phone = ScreenshotRenderer.render("onboarding-tutorial-phone") {
