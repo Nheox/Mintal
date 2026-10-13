@@ -125,14 +125,9 @@ fun HomeScreen(
         val needsPermission = Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
-        when {
-            !needsPermission -> viewModel.start()
-            // Onboarding normally explains this one already; this covers the person who
-            // skipped it there, or refused once and is trying again (spec §9).
-            MintalPermission.NOTIFICATIONS.key in state.dismissedPermissionNotes ->
-                requestNotificationsThenStart()
-            else -> explainingNotifications = true
-        }
+        // Onboarding normally explains this one already; this covers the person who
+        // skipped it there, or refused once and is trying again (spec §9).
+        if (needsPermission) explainingNotifications = true else viewModel.start()
     }
 
     Scaffold(
@@ -365,10 +360,6 @@ fun HomeScreen(
     if (explainingNotifications) {
         PermissionRationaleDialog(
             permission = MintalPermission.NOTIFICATIONS,
-            hideInFuture = MintalPermission.NOTIFICATIONS.key in state.dismissedPermissionNotes,
-            onHideInFutureChange = { dismissed ->
-                viewModel.setPermissionNoteDismissed(MintalPermission.NOTIFICATIONS.key, dismissed)
-            },
             onGrant = {
                 explainingNotifications = false
                 requestNotificationsThenStart()

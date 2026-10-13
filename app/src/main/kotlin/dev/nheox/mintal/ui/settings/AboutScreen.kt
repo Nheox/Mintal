@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.nheox.mintal.BuildConfig
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
+import dev.nheox.mintal.ui.onboarding.MINTAL_SLOGAN
 import dev.nheox.mintal.ui.components.StatLine
 
 @Composable
@@ -29,6 +30,12 @@ fun AboutScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             SectionCard(title = "Mintal") {
+                Text(
+                    text = MINTAL_SLOGAN,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
                 StatLine("Version", BuildConfig.VERSION_NAME)
                 StatLine("Licence", "GPL-3.0")
                 StatLine("Network permission", "none")

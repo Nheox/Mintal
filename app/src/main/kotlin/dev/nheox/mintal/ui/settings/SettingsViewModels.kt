@@ -114,9 +114,6 @@ class SettingsViewModel @Inject constructor(
             .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-    fun setPermissionNoteDismissed(key: String, dismissed: Boolean) = viewModelScope.launch {
-        preferences.setPermissionNoteDismissed(key, dismissed)
-    }
 }
 
 data class AllowlistRow(

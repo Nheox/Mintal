@@ -61,6 +61,14 @@ The Grove is **a bed of mints**, not one continuous runner network and not a gri
 - **The view is height-driven**: one plant always occupies about the same fraction of the
   band, and the reader pans along the bed. Fitting the whole Grove into the canvas would
   mean every plant shrinks as the Grove succeeds.
+- **The band is framed against what is in it**, between one mature plant and one young
+  one. Three seedlings framed for the plant they have not grown into yet are three specks
+  on an empty field; framed for themselves they are three seedlings.
+- **Panning is bounded.** However far the bed is dragged, at least 30% of each axis still
+  shows something; it cannot be flung into empty space with nothing left to drag back.
+  Once the view has been moved at all, a **Reset view** button appears in the corner and
+  returns the pan and zoom to where they started. It is not shown before then: it is an
+  undo for a gesture, not a permanent control sitting on the bed.
 
 ## §6 — The day boundary (clarification)
 
@@ -178,6 +186,22 @@ Settings lists each permission exactly once. Battery optimisation used to appear
 under *Device* ("Ask Android not to kill running sessions") and under *Permissions*
 ("Not being killed mid-session") — two names for one system screen — so the *Device* card
 is gone and its action lives with the other permissions.
+
+## §4 — The slogan and the tutorial (new)
+
+Mintal's line is **"Stay focused, stay mintalized"**. It sits under the name on the
+principles screen and in About.
+
+Under it, a **three-beat animated tutorial**, looping: set how long you want to focus
+(the growth track, with the bud marker sliding out), put the phone down and leave it
+alone (a phone tipping face-down with the session bar still running on it), the session
+is planted in your Grove (a real mint gaining nodes). Three dots mark the beat.
+
+It is **drawn, not played**: the same Compose canvas and the same `drawPlant` the Grove
+uses, so there is no video or GIF asset to ship, nothing is fetched at runtime, and the
+tutorial cannot drift from what the app actually does. Where the device has animations
+turned off system-wide, the three captions are listed as plain numbered text instead —
+someone who turned animations off has asked not to be shown one.
 
 ## §4 — The principles stand at every launch (new)
 

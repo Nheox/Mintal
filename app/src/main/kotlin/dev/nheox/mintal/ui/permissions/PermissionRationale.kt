@@ -2,16 +2,11 @@ package dev.nheox.mintal.ui.permissions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -24,7 +19,9 @@ import androidx.compose.ui.unit.dp
  * you refuse. So each one is introduced here first, in Mintal's words, and refusing is
  * always a real option — nothing in this list is a precondition for starting a session.
  *
- * [key] is persisted in "don't show again" state and in backups, so it must stay stable.
+ * There is deliberately no "don't show this again": the note is the case for the
+ * permission, shown the once before Mintal asks, and a case you can switch off is not
+ * one worth making. The one tick-box in the app belongs to the principles.
  */
 enum class MintalPermission(
     val key: String,
@@ -79,8 +76,6 @@ enum class MintalPermission(
 fun PermissionRationaleBody(
     permission: MintalPermission,
     modifier: Modifier = Modifier,
-    hideInFuture: Boolean? = null,
-    onHideInFutureChange: (Boolean) -> Unit = {},
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(text = permission.why, style = MaterialTheme.typography.bodyMedium)
@@ -89,21 +84,6 @@ fun PermissionRationaleBody(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (hideInFuture != null) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = hideInFuture, onCheckedChange = onHideInFutureChange)
-                Text(
-                    text = "Don't show this explanation again — it stays in Settings",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
-        }
     }
 }
 
@@ -116,21 +96,13 @@ fun PermissionRationaleDialog(
     permission: MintalPermission,
     onGrant: () -> Unit,
     onDismiss: () -> Unit,
-    hideInFuture: Boolean? = null,
-    onHideInFutureChange: (Boolean) -> Unit = {},
     grantLabel: String = permission.grantLabel,
     dismissLabel: String = "Not now",
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(permission.title) },
-        text = {
-            PermissionRationaleBody(
-                permission = permission,
-                hideInFuture = hideInFuture,
-                onHideInFutureChange = onHideInFutureChange,
-            )
-        },
+        text = { PermissionRationaleBody(permission = permission) },
         confirmButton = { TextButton(onClick = onGrant) { Text(grantLabel) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },
     )

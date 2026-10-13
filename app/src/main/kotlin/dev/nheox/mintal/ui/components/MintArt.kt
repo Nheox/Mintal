@@ -255,11 +255,15 @@ private fun DrawScope.drawBlade(
             }
         }
         if (species.art.surface == LeafSurface.GLOSSY) {
-            drawCircle(
-                color = Color.White.copy(alpha = 0.18f),
-                radius = length * 0.11f,
-                center = at(0.34f, length * 0.12f),
-            )
+            // Two small, faint marks along the midrib rather than one fat dot: a
+            // highlight that reads as a blemish on a dark leaf is worse than none.
+            for (spot in 0 until 2) {
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.12f),
+                    radius = length * (0.065f - 0.02f * spot),
+                    center = at(0.30f + 0.16f * spot, length * (0.10f - 0.03f * spot)),
+                )
+            }
         }
     }
 

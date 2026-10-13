@@ -52,7 +52,6 @@ data class SetupState(
     val unlockedCount: Int = 0,
     val catalogueSize: Int = 0,
     val tags: List<TagEntity> = emptyList(),
-    val dismissedPermissionNotes: Set<String> = emptySet(),
 )
 
 /**
@@ -102,7 +101,6 @@ class SessionSetupViewModel @Inject constructor(
             unlockedCount = unlocked.size,
             catalogueSize = catalogue.size,
             tags = tags,
-            dismissedPermissionNotes = settings.dismissedPermissionNotes,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SetupState())
 
@@ -126,10 +124,6 @@ class SessionSetupViewModel @Inject constructor(
     fun selectTag(tagId: Long?) = viewModelScope.launch {
         cancelPlanting()
         preferences.setSelectedTag(tagId)
-    }
-
-    fun setPermissionNoteDismissed(key: String, dismissed: Boolean) = viewModelScope.launch {
-        preferences.setPermissionNoteDismissed(key, dismissed)
     }
 
     /**

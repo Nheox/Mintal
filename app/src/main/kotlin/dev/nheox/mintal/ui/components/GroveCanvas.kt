@@ -3,17 +3,24 @@ package dev.nheox.mintal.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import dev.nheox.mintal.core.model.Species
@@ -45,9 +52,11 @@ fun GroveCanvas(
     val palette = mintalPalette
     var userScale by remember { mutableFloatStateOf(1f) }
     var userOffset by remember { mutableStateOf(Offset.Zero) }
+    val moved = userScale != 1f || userOffset != Offset.Zero
 
+    Box(modifier = modifier.fillMaxSize()) {
     Canvas(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .semantics {
                 contentDescription = buildString {
@@ -58,10 +67,19 @@ fun GroveCanvas(
                     append(" days. Tap a day's growth to open it.")
                 }
             }
-            .pointerInput(Unit) {
+            .pointerInput(layout) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    userScale = (userScale * zoom).coerceIn(0.4f, 8f)
-                    userOffset += pan
+                    val scaled = (userScale * zoom).coerceIn(0.5f, 8f)
+                    userScale = scaled
+                    // Panning used to be unbounded, so the bed could be flung off the
+                    // screen and left there with no way back but closing the screen.
+                    userOffset = clampPan(
+                        offset = userOffset + pan,
+                        canvasWidth = size.width.toFloat(),
+                        canvasHeight = size.height.toFloat(),
+                        layout = layout,
+                        userScale = scaled,
+                    )
                 }
             }
             .pointerInput(layout) {
@@ -115,7 +133,66 @@ fun GroveCanvas(
             )
         }
     }
+
+        // Only once the view has actually been moved: an undo for a gesture, not a
+        // permanent control sitting on top of the bed.
+        if (moved) {
+            FilledTonalButton(
+                onClick = {
+                    userScale = 1f
+                    userOffset = Offset.Zero
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp),
+            ) { Text("Reset view") }
+        }
+    }
 }
+
+/**
+ * Keeps the bed on screen. Whatever the pan, at least [EDGE_KEEP_FRACTION] of each axis
+ * still shows something: you can drag to the far end of the Grove, but not into empty
+ * space with nothing to drag back to.
+ */
+internal fun clampPan(
+    offset: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
+    layout: GroveLayout,
+    userScale: Float,
+): Offset {
+    if (canvasWidth <= 0f || canvasHeight <= 0f) return offset
+    val rect = groveContentRect(canvasWidth, canvasHeight, layout, userScale, Offset.Zero)
+    val keepX = canvasWidth * EDGE_KEEP_FRACTION
+    val keepY = canvasHeight * EDGE_KEEP_FRACTION
+
+    return Offset(
+        x = offset.x.clampBetween(keepX - rect.right, canvasWidth - keepX - rect.left),
+        y = offset.y.clampBetween(keepY - rect.bottom, canvasHeight - keepY - rect.top),
+    )
+}
+
+/** Where the whole bed lands on the canvas, in pixels, for a given pan. */
+internal fun groveContentRect(
+    canvasWidth: Float,
+    canvasHeight: Float,
+    layout: GroveLayout,
+    userScale: Float,
+    offset: Offset,
+): Rect {
+    val view = viewFor(canvasWidth, canvasHeight, layout, userScale, offset)
+    return Rect(
+        left = view.centreX + (layout.bounds.minX - view.modelCentreX) * view.scale,
+        top = view.centreY + (layout.bounds.minY - view.modelCentreY) * view.scale,
+        right = view.centreX + (layout.bounds.maxX - view.modelCentreX) * view.scale,
+        bottom = view.centreY + (layout.bounds.maxY - view.modelCentreY) * view.scale,
+    )
+}
+
+/** coerceIn with the ends the wrong way round means "no room to move": stay put. */
+private fun Float.clampBetween(low: Float, high: Float): Float =
+    if (low > high) (low + high) / 2f else coerceIn(low, high)
 
 /** Where the bed sits on the canvas: one structural unit is [scale] pixels. */
 private data class GroveView(
@@ -129,9 +206,15 @@ private data class GroveView(
 /** A mature plant stands about this many units tall, and should fill the band. */
 private const val VISIBLE_HEIGHT = 6.6f
 
+/** Below this, a young bed is drawn no larger: one seedling should not fill the sky. */
+private const val MIN_VISIBLE_HEIGHT = 3.1f
+
 /** However narrow the band, keep at least this much of the bed in frame. */
 private const val MIN_PLANTS_ACROSS = 2.2f
 private const val SLOT_WIDTH = 3.0f
+
+/** Fraction of each axis that must still show something after a pan. */
+private const val EDGE_KEEP_FRACTION = 0.3f
 
 /** Where the ground line sits down the canvas, leaving room to grow into. */
 private const val GROUND_FRACTION = 0.84f
@@ -151,9 +234,16 @@ private fun viewFor(
 ): GroveView {
     // Height-driven: a plant should fill the band it is drawn in, and the reader pans
     // sideways along the bed. The width only ever reins it in on a very narrow screen.
+    //
+    // The band is measured against what is actually in it, clamped between one mature
+    // plant and one young one. A Grove of three seedlings framed for a plant they have
+    // not grown into yet is three specks on an empty field; framed for themselves, they
+    // are three seedlings.
+    val unitsTall = layout.bounds.height.coerceIn(MIN_VISIBLE_HEIGHT, VISIBLE_HEIGHT)
+    val plantsAcross = (layout.bounds.width / SLOT_WIDTH).coerceIn(1.2f, MIN_PLANTS_ACROSS)
     val scale = min(
-        canvasHeight / VISIBLE_HEIGHT,
-        canvasWidth / (MIN_PLANTS_ACROSS * SLOT_WIDTH),
+        canvasHeight / unitsTall,
+        canvasWidth / (plantsAcross * SLOT_WIDTH),
     ) * userScale
     val visibleModelWidth = canvasWidth / scale
     // Open on the newest living plant. Anchoring on the far edge of the bed instead

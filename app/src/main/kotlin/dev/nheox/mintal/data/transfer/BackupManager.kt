@@ -128,15 +128,6 @@ class BackupManager @Inject constructor(
         return stream.use { input -> input.bufferedReader(Charsets.UTF_8).readText() }
     }
 
-    private fun JSONArray?.mapObjectsToStrings(): Set<String> {
-        if (this == null) return emptySet()
-        val result = LinkedHashSet<String>(length())
-        for (index in 0 until length()) {
-            result += getString(index)
-        }
-        return result
-    }
-
     private inline fun <T> JSONArray?.mapObjects(transform: (JSONObject) -> T): List<T> {
         if (this == null) return emptyList()
         val result = ArrayList<T>(length())
@@ -225,7 +216,6 @@ class BackupManager @Inject constructor(
         .put("principlesDismissed", principlesDismissed)
         .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
-        .put("dismissedPermissionNotes", JSONArray(dismissedPermissionNotes.toList()))
 
     private fun JSONObject.toSettings(): MintalSettings {
         val defaults = MintalSettings()
@@ -246,8 +236,6 @@ class BackupManager @Inject constructor(
             starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }
                 .getOrDefault(defaults.theme),
-            dismissedPermissionNotes = optJSONArray("dismissedPermissionNotes")
-                .mapObjectsToStrings(),
         )
     }
 

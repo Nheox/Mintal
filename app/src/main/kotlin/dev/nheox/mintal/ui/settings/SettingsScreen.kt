@@ -168,13 +168,7 @@ fun SettingsScreen(
                 )
                 if (settings.detectForegroundApp && !UsageAccess.isGranted(context)) {
                     OutlinedButton(
-                        onClick = {
-                            if (MintalPermission.USAGE_ACCESS.key in settings.dismissedPermissionNotes) {
-                                runCatching { context.startActivity(UsageAccess.settingsIntent()) }
-                            } else {
-                                explaining = MintalPermission.USAGE_ACCESS
-                            }
-                        },
+                        onClick = { explaining = MintalPermission.USAGE_ACCESS },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Grant Usage Access in system settings") }
                 }
@@ -237,8 +231,8 @@ fun SettingsScreen(
                         "without — a foreground service, a wake lock, a notification and " +
                         "vibration — and nothing else unless you turn it on. There is no " +
                         "internet permission. Each explanation below is the one shown " +
-                        "before the request, and stays here even if you dismissed it; " +
-                        "opening one is also how to grant or revoke it.",
+                        "before the request; opening one is also how to grant or " +
+                        "revoke it.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 MintalPermission.entries.forEach { permission ->
@@ -288,10 +282,6 @@ fun SettingsScreen(
     explaining?.let { permission ->
         PermissionRationaleDialog(
             permission = permission,
-            hideInFuture = permission.key in settings.dismissedPermissionNotes,
-            onHideInFutureChange = { dismissed ->
-                viewModel.setPermissionNoteDismissed(permission.key, dismissed)
-            },
             onGrant = {
                 val intent = when (permission) {
                     MintalPermission.NOTIFICATIONS -> viewModel.notificationSettingsIntent()

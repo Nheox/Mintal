@@ -169,6 +169,43 @@ class GroveScreenshotTest {
         assertTrue(light.length() > 0 && dark.length() > 0)
     }
 
+    @Composable
+    private fun YoungBed(species: List<Species>, theme: ThemeChoice) {
+        val byId = species.associateBy { it.id }
+        // Three sessions, three days old. The framing should suit what is there rather
+        // than the mature plant it has not grown into.
+        val history = sessions("spicata", 2) + sessions("piperita", 1)
+        MintalTheme(theme = theme) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(420.dp)
+                            .background(mintalPalette.grovePaper),
+                    ) {
+                        GroveCanvas(
+                            layout = GroveLayoutBuilder.build(history, byId),
+                            speciesById = byId,
+                            onDayTap = {},
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `renders a young bed close enough to see`() {
+        val shot = ScreenshotRenderer.render("grove-young") {
+            YoungBed(catalogue(), ThemeChoice.LIGHT)
+        }
+        assertTrue(shot.length() > 0)
+    }
+
     @Test
     fun `renders one mint at every growth stage`() {
         val spearmint = catalogue().first { it.id == "spicata" }

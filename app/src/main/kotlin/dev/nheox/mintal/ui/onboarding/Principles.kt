@@ -14,26 +14,35 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.data.prefs.MintalPreferences
+import dev.nheox.mintal.data.species.SpeciesCatalog
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/** The line under the name, wherever the name appears. */
+const val MINTAL_SLOGAN = "Stay focused, stay mintalized"
 
 /**
  * What Mintal is and what it will not do. These three claims are the product, not a
@@ -43,9 +52,24 @@ import javax.inject.Inject
  */
 @Composable
 fun PrinciplesBody(
-    dismissed: Boolean? = null,
-    onDismissedChange: (Boolean) -> Unit = {},
+    tutorialSpecies: Species? = null,
+    /** Pins the tutorial to one frame instead of animating it; used by the renders. */
+    tutorialProgress: Float? = null,
 ) {
+    Text(
+        text = MINTAL_SLOGAN,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    if (tutorialProgress == null) {
+        FocusTutorial(species = tutorialSpecies)
+    } else {
+        FocusTutorialFrame(species = tutorialSpecies, progress = tutorialProgress)
+    }
+
     Text(
         text = "Choose how long you want to concentrate. Stay off the phone and the " +
             "session is planted in the Grove: a bed of real mints that grows with every " +
@@ -81,18 +105,32 @@ fun PrinciplesBody(
             style = MaterialTheme.typography.bodyMedium,
         )
     }
+}
 
-    if (dismissed != null) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = dismissed, onCheckedChange = onDismissedChange)
-            Text(
-                text = "Don't show this again — it stays in Settings",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = 4.dp),
-            )
+/**
+ * The tick and the way on, pinned to the bottom. With a tutorial and three cards above
+ * them they would otherwise sit below the fold, and a dismissal you have to go looking
+ * for is not much of a dismissal either.
+ */
+@Composable
+fun PrinciplesFooter(
+    dismissed: Boolean,
+    onDismissedChange: (Boolean) -> Unit,
+    actionLabel: String,
+    onAction: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = dismissed, onCheckedChange = onDismissedChange)
+                Text(
+                    text = "Don't show this again — it stays in Settings",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+            Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -100,11 +138,21 @@ fun PrinciplesBody(
 @HiltViewModel
 class PrinciplesViewModel @Inject constructor(
     private val preferences: MintalPreferences,
+    speciesCatalog: SpeciesCatalog,
 ) : ViewModel() {
 
     val dismissed: StateFlow<Boolean> = preferences.settings
         .map { it.principlesDismissed }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val _tutorialSpecies = MutableStateFlow<Species?>(null)
+
+    /** The mint the tutorial grows: the catalogue's first, so it is never invented. */
+    val tutorialSpecies: StateFlow<Species?> = _tutorialSpecies.asStateFlow()
+
+    init {
+        viewModelScope.launch { _tutorialSpecies.value = speciesCatalog.all().firstOrNull() }
+    }
 
     fun setDismissed(value: Boolean) = viewModelScope.launch {
         preferences.setPrinciplesDismissed(value)
@@ -123,11 +171,22 @@ fun PrinciplesScreen(
 ) {
     val viewModel: PrinciplesViewModel = hiltViewModel()
     val dismissed by viewModel.dismissed.collectAsStateWithLifecycle()
+    val species by viewModel.tutorialSpecies.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             if (onBack != null) {
                 MintalTopBar(title = "Mintal's principles", onBack = onBack)
+            }
+        },
+        bottomBar = {
+            if (onContinue != null) {
+                PrinciplesFooter(
+                    dismissed = dismissed,
+                    onDismissedChange = viewModel::setDismissed,
+                    actionLabel = "Start focusing",
+                    onAction = onContinue,
+                )
             }
         },
     ) { padding ->
@@ -137,25 +196,21 @@ fun PrinciplesScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             if (onBack == null) {
-                Text(text = "Mintal", style = MaterialTheme.typography.displayLarge)
+                Text(
+                    text = "Mintal",
+                    style = MaterialTheme.typography.displayLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
-            PrinciplesBody(
-                dismissed = dismissed,
-                onDismissedChange = viewModel::setDismissed,
-            )
+            PrinciplesBody(tutorialSpecies = species)
 
-            if (onContinue != null) {
-                Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
-                    Text("Start focusing")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

@@ -26,19 +26,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.data.prefs.MintalPreferences
+import dev.nheox.mintal.data.species.SpeciesCatalog
 import dev.nheox.mintal.ui.components.SectionCard
 import dev.nheox.mintal.ui.permissions.MintalPermission
 import dev.nheox.mintal.ui.permissions.PermissionRationaleBody
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,19 +52,24 @@ import javax.inject.Inject
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val preferences: MintalPreferences,
+    speciesCatalog: SpeciesCatalog,
 ) : ViewModel() {
-    fun complete(onDone: () -> Unit) = viewModelScope.launch {
-        preferences.setOnboardingComplete(true)
-        onDone()
-    }
-
-    fun setRationaleHidden(permission: MintalPermission, hidden: Boolean) = viewModelScope.launch {
-        preferences.setPermissionNoteDismissed(permission.key, hidden)
-    }
 
     val principlesDismissed: StateFlow<Boolean> = preferences.settings
         .map { it.principlesDismissed }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val _tutorialSpecies = MutableStateFlow<Species?>(null)
+    val tutorialSpecies: StateFlow<Species?> = _tutorialSpecies.asStateFlow()
+
+    init {
+        viewModelScope.launch { _tutorialSpecies.value = speciesCatalog.all().firstOrNull() }
+    }
+
+    fun complete(onDone: () -> Unit) = viewModelScope.launch {
+        preferences.setOnboardingComplete(true)
+        onDone()
+    }
 
     fun setPrinciplesDismissed(value: Boolean) = viewModelScope.launch {
         preferences.setPrinciplesDismissed(value)
@@ -79,8 +89,8 @@ fun OnboardingScreen(onDone: () -> Unit) {
     val viewModel: OnboardingViewModel = hiltViewModel()
     val context = LocalContext.current
     val principlesDismissed by viewModel.principlesDismissed.collectAsStateWithLifecycle()
+    val species by viewModel.tutorialSpecies.collectAsStateWithLifecycle()
     var explainingNotifications by remember { mutableStateOf(false) }
-    var hideRationale by remember { mutableStateOf(false) }
 
     // Below Android 13 the notification permission is granted at install time, so there is
     // nothing to explain and nothing to ask for.
@@ -96,6 +106,65 @@ fun OnboardingScreen(onDone: () -> Unit) {
         viewModel.complete(onDone)
     }
 
+    if (explainingNotifications) {
+        NotificationPage(
+            onAllow = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
+            onSkip = { viewModel.complete(onDone) },
+        )
+        return
+    }
+
+    Scaffold(
+        bottomBar = {
+            PrinciplesFooter(
+                dismissed = principlesDismissed,
+                onDismissedChange = viewModel::setPrinciplesDismissed,
+                actionLabel = if (needsNotificationPermission) {
+                    "Continue"
+                } else {
+                    "Choose your first mint"
+                },
+                onAction = {
+                    if (needsNotificationPermission) {
+                        explainingNotifications = true
+                    } else {
+                        viewModel.complete(onDone)
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Mintal",
+                style = MaterialTheme.typography.displayLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            PrinciplesBody(tutorialSpecies = species)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+/**
+ * The one permission, explained and then asked for. No "don't show again" here: this is
+ * the only time Mintal gets to say why before Android says what, and refusing is already
+ * one tap away.
+ */
+@Composable
+private fun NotificationPage(
+    onAllow: () -> Unit,
+    onSkip: () -> Unit,
+) {
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -106,51 +175,16 @@ fun OnboardingScreen(onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(12.dp))
-
-            if (explainingNotifications) {
-                Text(text = "One permission", style = MaterialTheme.typography.displaySmall)
-                SectionCard(title = MintalPermission.NOTIFICATIONS.title) {
-                    PermissionRationaleBody(
-                        permission = MintalPermission.NOTIFICATIONS,
-                        hideInFuture = hideRationale,
-                        onHideInFutureChange = { hidden ->
-                            hideRationale = hidden
-                            viewModel.setRationaleHidden(MintalPermission.NOTIFICATIONS, hidden)
-                        },
-                    )
-                }
-                Button(
-                    onClick = {
-                        requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(MintalPermission.NOTIFICATIONS.grantLabel) }
-                OutlinedButton(
-                    onClick = { viewModel.complete(onDone) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Skip for now") }
-                Spacer(modifier = Modifier.height(24.dp))
-                return@Column
+            Text(text = "One permission", style = MaterialTheme.typography.displaySmall)
+            SectionCard(title = MintalPermission.NOTIFICATIONS.title) {
+                PermissionRationaleBody(permission = MintalPermission.NOTIFICATIONS)
             }
-
-            Text(text = "Mintal", style = MaterialTheme.typography.displayLarge)
-
-            PrinciplesBody(
-                dismissed = principlesDismissed,
-                onDismissedChange = viewModel::setPrinciplesDismissed,
-            )
-
-            Button(
-                onClick = {
-                    if (needsNotificationPermission) {
-                        explainingNotifications = true
-                    } else {
-                        viewModel.complete(onDone)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (needsNotificationPermission) "Continue" else "Choose your first mint") }
-
+            Button(onClick = onAllow, modifier = Modifier.fillMaxWidth()) {
+                Text(MintalPermission.NOTIFICATIONS.grantLabel)
+            }
+            OutlinedButton(onClick = onSkip, modifier = Modifier.fillMaxWidth()) {
+                Text("Skip for now")
+            }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

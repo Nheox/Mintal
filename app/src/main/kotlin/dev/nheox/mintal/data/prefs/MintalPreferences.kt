@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.nheox.mintal.core.model.SessionMode
@@ -49,12 +48,6 @@ data class MintalSettings(
     val principlesDismissed: Boolean = false,
     val starterTagsSeeded: Boolean = false,
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
-    /**
-     * Keys of the permission explanations the user ticked "don't show again" on. This
-     * hides Mintal's own note before the request, never the request: Android's prompt is
-     * the system's and always appears, and every note stays readable in Settings.
-     */
-    val dismissedPermissionNotes: Set<String> = emptySet(),
 )
 
 @Singleton
@@ -76,7 +69,6 @@ class MintalPreferences @Inject constructor(
         val PRINCIPLES_DISMISSED = booleanPreferencesKey("principles_dismissed")
         val STARTER_TAGS = booleanPreferencesKey("starter_tags_seeded")
         val THEME = stringPreferencesKey("theme")
-        val DISMISSED_NOTES = stringSetPreferencesKey("dismissed_permission_notes")
     }
 
     val settings: Flow<MintalSettings> = context.mintalDataStore.data
@@ -102,7 +94,6 @@ class MintalPreferences @Inject constructor(
                 starterTagsSeeded = prefs[Keys.STARTER_TAGS] ?: false,
                 theme = runCatching { ThemeChoice.valueOf(prefs[Keys.THEME] ?: "") }
                     .getOrDefault(ThemeChoice.SYSTEM),
-                dismissedPermissionNotes = prefs[Keys.DISMISSED_NOTES] ?: emptySet(),
             )
         }
 
@@ -135,16 +126,6 @@ class MintalPreferences @Inject constructor(
 
     suspend fun setTheme(theme: ThemeChoice) = edit { it[Keys.THEME] = theme.name }
 
-    /**
-     * "Don't show this again" hides the explanation before the system prompt, never the
-     * prompt and never the explanation itself: Settings keeps a copy of every one, and
-     * Android still asks for the permission in its own words (spec §9).
-     */
-    suspend fun setPermissionNoteDismissed(key: String, hidden: Boolean) = edit { prefs ->
-        val current = prefs[Keys.DISMISSED_NOTES] ?: emptySet()
-        prefs[Keys.DISMISSED_NOTES] = if (hidden) current + key else current - key
-    }
-
     /** Used by backup restore, which replaces preferences wholesale (spec §7.1). */
     suspend fun replaceAll(settings: MintalSettings) = edit { prefs ->
         prefs[Keys.SELECTED_SPECIES] = settings.selectedSpeciesId
@@ -161,7 +142,6 @@ class MintalPreferences @Inject constructor(
         prefs[Keys.PRINCIPLES_DISMISSED] = settings.principlesDismissed
         prefs[Keys.STARTER_TAGS] = settings.starterTagsSeeded
         prefs[Keys.THEME] = settings.theme.name
-        prefs[Keys.DISMISSED_NOTES] = settings.dismissedPermissionNotes
     }
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
