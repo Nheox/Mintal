@@ -7,8 +7,17 @@
       "commonName": "Spearmint",
       "unlockMinutes": 0,
       "hybrid": false,
-      "note": "True species. Pointed, sharply serrated leaves and a sweet, low-menthol scent — the mint of kitchen gardens and tea.",
-      "art": { "leafShape": "SPEAR", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+      "note": "True species. Sessile, sharply toothed lance-shaped leaves with deeply impressed veins, and a slender terminal spike — the silhouette every other mint differs from.",
+      "art": {
+        "leafShape": "SPEAR",
+        "margin": "SERRATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.0,
+        "leafHue": "LEAF_MID",
+        "stemHue": "STEM_GREEN",
+        "attachment": "SESSILE",
+        "flower": "SLENDER_SPIKE"
+      }
     },
     {
       "id": "piperita",
@@ -16,8 +25,17 @@
       "commonName": "Peppermint",
       "unlockMinutes": 120,
       "hybrid": true,
-      "note": "Natural hybrid of M. aquatica and M. spicata. High in menthol, which is where the cold bite comes from.",
-      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_DARK", "stemHue": "STEM_PURPLE" }
+      "note": "Natural hybrid of M. aquatica and M. spicata. Red-purple stems under dark, short-stalked leaves; high menthol, which is where the cold bite comes from.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "SERRATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.0,
+        "leafHue": "LEAF_DARK",
+        "stemHue": "STEM_PURPLE",
+        "attachment": "STALKED",
+        "flower": "BLUNT_SPIKE"
+      }
     },
     {
       "id": "suaveolens",
@@ -25,8 +43,17 @@
       "commonName": "Apple mint",
       "unlockMinutes": 300,
       "hybrid": false,
-      "note": "True species. Round, woolly, soft-scented leaves; copes with dry ground better than most mints.",
-      "art": { "leafShape": "ROUND", "margin": "CRENATE", "habit": "UPRIGHT", "leafScale": 1.15, "leafHue": "LEAF_PALE", "stemHue": "STEM_GREEN" }
+      "note": "True species. Sessile, rounded-oblong leaves with a scalloped edge, deeply puckered and white-woolly — the softest-looking mint in the set.",
+      "art": {
+        "leafShape": "ROUND",
+        "margin": "CRENATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.15,
+        "leafHue": "LEAF_PALE",
+        "stemHue": "STEM_GREEN",
+        "attachment": "SESSILE",
+        "flower": "SLENDER_SPIKE"
+      }
     },
     {
       "id": "arvensis",
@@ -34,8 +61,17 @@
       "commonName": "Field mint",
       "unlockMinutes": 600,
       "hybrid": false,
-      "note": "True species, and the most widespread — native across the northern hemisphere, grown in Asia as a menthol crop.",
-      "art": { "leafShape": "OVATE", "margin": "CRENATE", "habit": "CREEPING", "leafScale": 0.9, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+      "note": "True species, and the most widespread. Flowers sit in whorls in the leaf axils with the leafy stem continuing above them — no terminal head, which is how it is told apart.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "SERRATE",
+        "habit": "UPRIGHT",
+        "leafScale": 0.9,
+        "leafHue": "LEAF_MID",
+        "stemHue": "STEM_GREEN",
+        "attachment": "STALKED",
+        "flower": "AXILLARY_WHORLS"
+      }
     },
     {
       "id": "aquatica",
@@ -43,8 +79,17 @@
       "commonName": "Water mint",
       "unlockMinutes": 1200,
       "hybrid": false,
-      "note": "True species. Grows with its feet in water and flowers in lilac heads; one parent of peppermint.",
-      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.05, "leafHue": "LEAF_BLUE", "stemHue": "STEM_PURPLE" }
+      "note": "True species. A round lilac head at the stem tip rather than a spike, over purple-flushed leaves and dark hairy stems; grows on wet margins, and is one parent of peppermint.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "SERRATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.05,
+        "leafHue": "LEAF_BLUE",
+        "stemHue": "STEM_PURPLE",
+        "attachment": "STALKED",
+        "flower": "ROUND_HEAD"
+      }
     },
     {
       "id": "gracilis",
@@ -52,8 +97,17 @@
       "commonName": "Ginger mint",
       "unlockMinutes": 2100,
       "hybrid": true,
-      "note": "Hybrid of M. arvensis and M. spicata. Gold-flecked foliage and a warm, faintly spicy scent.",
-      "art": { "leafShape": "LANCEOLATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 0.95, "leafHue": "LEAF_GOLD", "stemHue": "STEM_GREEN" }
+      "note": "Hybrid of M. arvensis and M. spicata. Glossy ovate leaves, gold-cream variegation along the veins and margins — the only variegated mint here.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "CRENATE",
+        "habit": "UPRIGHT",
+        "leafScale": 0.95,
+        "leafHue": "LEAF_GOLD",
+        "stemHue": "STEM_GREEN",
+        "attachment": "STALKED",
+        "flower": "AXILLARY_WHORLS"
+      }
     },
     {
       "id": "longifolia",
@@ -61,8 +115,17 @@
       "commonName": "Horse mint",
       "unlockMinutes": 3000,
       "hybrid": false,
-      "note": "True species. Tall, grey-downy and long-leaved; the hairs are what give it its pale cast.",
-      "art": { "leafShape": "LANCEOLATE", "margin": "SERRATE", "habit": "TALL", "leafScale": 1.2, "leafHue": "LEAF_GREY", "stemHue": "STEM_GREY" }
+      "note": "True species. Tall, with long narrow sessile leaves made silver-grey by dense hairs rather than by pigment, and slender pale-lilac terminal spikes.",
+      "art": {
+        "leafShape": "LANCEOLATE",
+        "margin": "SERRATE",
+        "habit": "TALL",
+        "leafScale": 1.2,
+        "leafHue": "LEAF_GREY",
+        "stemHue": "STEM_GREY",
+        "attachment": "SESSILE",
+        "flower": "SLENDER_SPIKE"
+      }
     },
     {
       "id": "pulegium",
@@ -70,8 +133,17 @@
       "commonName": "Pennyroyal",
       "unlockMinutes": 4500,
       "hybrid": false,
-      "note": "True species. Low, creeping and intensely scented; long used medicinally, but toxic in quantity.",
-      "art": { "leafShape": "OVATE", "margin": "ENTIRE", "habit": "CREEPING", "leafScale": 0.75, "leafHue": "LEAF_DARK", "stemHue": "STEM_GREEN" }
+      "note": "True species. Very small, near-entire leaves in opposite pairs; tight lilac whorls spaced up erect shoots like beads on a string. Long used medicinally, but toxic in quantity.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "ENTIRE",
+        "habit": "CREEPING",
+        "leafScale": 0.75,
+        "leafHue": "LEAF_DARK",
+        "stemHue": "STEM_GREEN",
+        "attachment": "STALKED",
+        "flower": "SPACED_WHORLS"
+      }
     },
     {
       "id": "requienii",
@@ -79,8 +151,17 @@
       "commonName": "Corsican mint",
       "unlockMinutes": 6000,
       "hybrid": false,
-      "note": "True species, and the smallest — leaves a few millimetres across, matting over stone and scenting the air underfoot.",
-      "art": { "leafShape": "ROUND", "margin": "ENTIRE", "habit": "CREEPING", "leafScale": 0.55, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+      "note": "True species, and the smallest — millimetre-scale round leaves forming a creeping mat that spills over stone. Scale is the only tell.",
+      "art": {
+        "leafShape": "ROUND",
+        "margin": "ENTIRE",
+        "habit": "CREEPING",
+        "leafScale": 0.55,
+        "leafHue": "LEAF_MID",
+        "stemHue": "STEM_GREEN",
+        "attachment": "SESSILE",
+        "flower": "NONE"
+      }
     },
     {
       "id": "citrata_chocolate",
@@ -88,8 +169,17 @@
       "commonName": "Chocolate mint",
       "unlockMinutes": 9000,
       "hybrid": true,
-      "note": "A peppermint cultivar. Dark stems and a cocoa-like note over the usual menthol.",
-      "art": { "leafShape": "OVATE", "margin": "SERRATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_DARK", "stemHue": "STEM_BROWN" }
+      "note": "A peppermint cultivar, read off its stems: dark red-brown, under deep green leaves with a bronze-purple flush.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "SERRATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.0,
+        "leafHue": "LEAF_DARK",
+        "stemHue": "STEM_BROWN",
+        "attachment": "STALKED",
+        "flower": "BLUNT_SPIKE"
+      }
     },
     {
       "id": "citrata_lavender",
@@ -97,8 +187,17 @@
       "commonName": "Lavender mint",
       "unlockMinutes": 12000,
       "hybrid": true,
-      "note": "A peppermint cultivar selected for a floral, lavender-like scent rather than a sharper one.",
-      "art": { "leafShape": "LANCEOLATE", "margin": "CRENATE", "habit": "UPRIGHT", "leafScale": 1.0, "leafHue": "LEAF_BLUE", "stemHue": "STEM_PURPLE" }
+      "note": "A peppermint cultivar with rounded-ovate, blunt-tipped, softly hairy leaves, selected for a floral scent rather than a sharper one.",
+      "art": {
+        "leafShape": "OVATE",
+        "margin": "CRENATE",
+        "habit": "UPRIGHT",
+        "leafScale": 1.0,
+        "leafHue": "LEAF_BLUE",
+        "stemHue": "STEM_PURPLE",
+        "attachment": "STALKED",
+        "flower": "BLUNT_SPIKE"
+      }
     },
     {
       "id": "cervina",
@@ -106,8 +205,18 @@
       "commonName": "Hart's pennyroyal",
       "unlockMinutes": 18000,
       "hybrid": false,
-      "note": "True species, sometimes split off as Preslia cervina. Needle-narrow leaves and whorls of white flowers; a wetland plant of Iberia.",
-      "art": { "leafShape": "NEEDLE", "margin": "ENTIRE", "habit": "TALL", "leafScale": 0.85, "leafHue": "LEAF_MID", "stemHue": "STEM_GREEN" }
+      "note": "True species, sometimes split off as Preslia cervina. Narrow linear leaves on wiry stems, rosemary-like, with dense globes of lilac or white flowers. It barely reads as a mint.",
+      "art": {
+        "leafShape": "NEEDLE",
+        "margin": "ENTIRE",
+        "habit": "TALL",
+        "leafScale": 0.85,
+        "leafHue": "LEAF_MID",
+        "stemHue": "STEM_GREEN",
+        "attachment": "SESSILE",
+        "flower": "GLOBE"
+      }
     }
-  ]
+  ],
+  "referencedFrom": "Per-species traits taken from a photo reference sheet compiled by the author; the photographs themselves are reference only and are not part of this repository."
 }

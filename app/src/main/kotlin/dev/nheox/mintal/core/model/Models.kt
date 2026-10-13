@@ -39,9 +39,29 @@ data class SpeciesArt(
     val leafScale: Float,
     val leafHue: LeafHue,
     val stemHue: StemHue,
+    val attachment: LeafAttachment,
+    val flower: FlowerForm,
 )
 
 enum class LeafShape { SPEAR, OVATE, ROUND, LANCEOLATE, NEEDLE }
+
+/** Whether a leaf sits straight on the stem or on a short stalk — a real field mark. */
+enum class LeafAttachment { SESSILE, STALKED }
+
+/**
+ * How a species flowers, which separates the mints more sharply than leaf shape does: a
+ * slender terminal spike, a blunt one, a round head at the tip, whorls in the leaf axils
+ * with the stem carrying on above them, whorls spaced up the stem, or dense globes.
+ */
+enum class FlowerForm {
+    SLENDER_SPIKE,
+    BLUNT_SPIKE,
+    ROUND_HEAD,
+    AXILLARY_WHORLS,
+    SPACED_WHORLS,
+    GLOBE,
+    NONE,
+}
 
 enum class LeafMargin { SERRATE, CRENATE, ENTIRE }
 

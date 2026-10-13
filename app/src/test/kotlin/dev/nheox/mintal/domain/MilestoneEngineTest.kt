@@ -1,6 +1,8 @@
 package dev.nheox.mintal.domain
 
+import dev.nheox.mintal.core.model.FlowerForm
 import dev.nheox.mintal.core.model.GrowthHabit
+import dev.nheox.mintal.core.model.LeafAttachment
 import dev.nheox.mintal.core.model.LeafHue
 import dev.nheox.mintal.core.model.LeafMargin
 import dev.nheox.mintal.core.model.LeafShape
@@ -29,6 +31,8 @@ class MilestoneEngineTest {
             leafScale = 1f,
             leafHue = LeafHue.LEAF_MID,
             stemHue = StemHue.STEM_GREEN,
+            attachment = LeafAttachment.SESSILE,
+            flower = FlowerForm.SLENDER_SPIKE,
         ),
     )
 

@@ -49,6 +49,8 @@ internal object MintalPaletteValues {
     val StemGrey = Color(0xFF8C9A90)
     val StemBrown = Color(0xFF6E5243)
     val Wilted = Color(0xFFB08A5E)
+    val FlowerLilac = Color(0xFFB9A6D6)
+    val FlowerLilacDark = Color(0xFFCDBCE6)
 }
 
 /**
@@ -61,6 +63,7 @@ data class MintalPalette(
     val groveRunner: Color,
     val groveGlow: Color,
     val wilted: Color,
+    val flower: Color,
     val barTrack: Color,
     val barFill: Color,
     val barFillSpent: Color,
@@ -106,6 +109,7 @@ val MintalLightPalette = MintalPalette(
     groveRunner = MintalPaletteValues.StemGreen,
     groveGlow = MintalPaletteValues.Mint80,
     wilted = MintalPaletteValues.Wilted,
+    flower = MintalPaletteValues.FlowerLilac,
     barTrack = MintalPaletteValues.Mint90,
     barFill = MintalPaletteValues.Mint40,
     barFillSpent = MintalPaletteValues.Mint60,
@@ -122,6 +126,7 @@ val MintalDarkPalette = MintalPalette(
     groveRunner = MintalPaletteValues.Mint60,
     groveGlow = MintalPaletteValues.Mint30,
     wilted = MintalPaletteValues.Wilted,
+    flower = MintalPaletteValues.FlowerLilacDark,
     barTrack = MintalPaletteValues.Mint20,
     barFill = MintalPaletteValues.Mint60,
     barFillSpent = MintalPaletteValues.Mint40,

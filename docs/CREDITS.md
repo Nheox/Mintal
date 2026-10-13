@@ -33,6 +33,17 @@ System font families only (`FontFamily.Monospace` for numerals and headings,
 `FontFamily.SansSerif` for body text). Nothing is downloaded at runtime; a bundled
 typeface will be credited here when one is chosen.
 
+## Botanical reference
+
+The per-species traits that drive the drawings — leaf shape and margin, whether a leaf is
+sessile or stalked, growth habit, and the form of the inflorescence — come from a photo
+reference sheet the author compiled, with each photograph attributed to its source.
+
+**The photographs themselves are not in this repository and are not shipped.** They were
+consulted as reference only; their sources retain their own rights. What the app contains
+is drawing parameters derived from observing them, which is the same relationship an
+illustrator has to the plant on their desk.
+
 ## Botanical notes
 
 The one-line notes in `assets/species.json` were written for this project from general

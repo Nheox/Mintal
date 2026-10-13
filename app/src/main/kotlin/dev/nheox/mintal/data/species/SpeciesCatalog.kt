@@ -2,7 +2,9 @@ package dev.nheox.mintal.data.species
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.nheox.mintal.core.model.FlowerForm
 import dev.nheox.mintal.core.model.GrowthHabit
+import dev.nheox.mintal.core.model.LeafAttachment
 import dev.nheox.mintal.core.model.LeafHue
 import dev.nheox.mintal.core.model.LeafMargin
 import dev.nheox.mintal.core.model.LeafShape
@@ -63,6 +65,8 @@ class SpeciesCatalog @Inject constructor(
                     leafScale = art.optDouble("leafScale", 1.0).toFloat(),
                     leafHue = art.getString("leafHue").toEnum(LeafHue.LEAF_MID),
                     stemHue = art.getString("stemHue").toEnum(StemHue.STEM_GREEN),
+                    attachment = art.optString("attachment").toEnum(LeafAttachment.SESSILE),
+                    flower = art.optString("flower").toEnum(FlowerForm.NONE),
                 ),
             )
         }

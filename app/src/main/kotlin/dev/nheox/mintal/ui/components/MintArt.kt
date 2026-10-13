@@ -14,7 +14,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.nheox.mintal.core.model.FlowerForm
 import dev.nheox.mintal.core.model.GrowthHabit
+import dev.nheox.mintal.core.model.LeafAttachment
 import dev.nheox.mintal.core.model.LeafMargin
 import dev.nheox.mintal.core.model.LeafShape
 import dev.nheox.mintal.core.model.Species
@@ -111,14 +113,31 @@ fun DrawScope.drawLeafPair(
     wilted: Boolean = false,
     outlineWidth: Float = 1f,
 ) {
+    // A stalked leaf holds its blade off the stem; a sessile one sits straight on it.
+    // It is a real field mark — spearmint against peppermint turns on exactly this.
+    val stalk = if (species.art.attachment == LeafAttachment.STALKED) leafLength * 0.22f else 0f
+
     for (side in intArrayOf(1, -1)) {
         val leafAngle = axisAngle + spread * side + if (wilted) 0.4f * side else 0f
-        val tip = Offset(
-            node.x + cos(leafAngle) * leafLength,
-            node.y + sin(leafAngle) * leafLength,
+        val bladeBase = Offset(
+            node.x + cos(leafAngle) * stalk,
+            node.y + sin(leafAngle) * stalk,
         )
+        val tip = Offset(
+            node.x + cos(leafAngle) * (leafLength + stalk),
+            node.y + sin(leafAngle) * (leafLength + stalk),
+        )
+        if (stalk > 0f) {
+            drawLine(
+                color = stemColour,
+                start = node,
+                end = bladeBase,
+                strokeWidth = outlineWidth * 1.4f,
+                cap = StrokeCap.Round,
+            )
+        }
         val path = leafPath(
-            base = node,
+            base = bladeBase,
             tip = tip,
             halfWidth = leafLength,
             shape = species.art.leafShape,
@@ -129,11 +148,63 @@ fun DrawScope.drawLeafPair(
         // The midrib is what makes a green shape read as a leaf rather than a blob.
         drawLine(
             color = stemColour.copy(alpha = 0.65f),
-            start = node,
+            start = bladeBase,
             end = tip,
             strokeWidth = outlineWidth,
             cap = StrokeCap.Round,
         )
+    }
+}
+
+/**
+ * How a species flowers tells the mints apart faster than leaf shape does, so the sprig
+ * carries its inflorescence: a slender or blunt spike above the tip, a round head, whorls
+ * in the leaf axils with the stem continuing past them, or dense globes.
+ */
+private fun DrawScope.drawInflorescence(
+    tip: Offset,
+    nodes: List<Offset>,
+    angle: Float,
+    heightPx: Float,
+    form: FlowerForm,
+    colour: Color,
+) {
+    val unit = (heightPx * 0.05f).coerceAtLeast(1.2f)
+    fun along(distance: Float) = Offset(
+        tip.x + cos(angle) * distance,
+        tip.y + sin(angle) * distance,
+    )
+
+    when (form) {
+        FlowerForm.SLENDER_SPIKE -> for (step in 0 until 6) {
+            val fraction = step / 5f
+            drawCircle(colour, unit * (0.85f - 0.5f * fraction), along(unit * step * 0.85f))
+        }
+        FlowerForm.BLUNT_SPIKE -> for (step in 0 until 3) {
+            drawCircle(colour, unit * 1.1f, along(unit * step * 1.3f))
+        }
+        FlowerForm.ROUND_HEAD -> drawCircle(colour, unit * 1.9f, along(unit * 1.4f))
+        FlowerForm.GLOBE -> {
+            val centre = along(unit * 1.3f)
+            drawCircle(colour, unit * 1.6f, centre)
+            // Protruding stamens: the reason this one does not read as a mint at all.
+            for (spoke in 0 until 8) {
+                val spokeAngle = spoke * 0.7854f
+                drawLine(
+                    color = colour,
+                    start = centre,
+                    end = Offset(
+                        centre.x + cos(spokeAngle) * unit * 2.4f,
+                        centre.y + sin(spokeAngle) * unit * 2.4f,
+                    ),
+                    strokeWidth = unit * 0.22f,
+                )
+            }
+        }
+        // Whorls sit at the leaf axils, and the stem carries on above them — no terminal head.
+        FlowerForm.AXILLARY_WHORLS -> nodes.forEach { drawCircle(colour, unit * 0.9f, it) }
+        FlowerForm.SPACED_WHORLS -> nodes.forEach { drawCircle(colour, unit * 1.15f, it) }
+        FlowerForm.NONE -> Unit
     }
 }
 
@@ -146,6 +217,7 @@ fun DrawScope.drawSprig(
     leafColour: Color,
     stemColour: Color,
     leafPairs: Int,
+    flowerColour: Color = leafColour,
     wilted: Boolean = false,
 ) {
     val lean = when (species.art.habit) {
@@ -167,15 +239,19 @@ fun DrawScope.drawSprig(
     )
 
     val pairs = leafPairs.coerceAtLeast(1)
-    val baseLength = heightPx * 0.50f * species.art.leafScale * if (wilted) 0.6f else 1f
+    val baseLength = heightPx * 0.40f * species.art.leafScale * if (wilted) 0.6f else 1f
+    val nodes = ArrayList<Offset>(pairs)
     for (pair in 0 until pairs) {
         val fraction = pair.toFloat() / pairs
-        val along = 0.25f + 0.72f * fraction
+        // Spread the nodes further apart than the leaves are long, so the stem stays
+        // visible between the pairs and the axillary whorls are not buried.
+        val along = 0.18f + 0.78f * fraction
         val scale = 1f - 0.45f * fraction
         val node = Offset(
             origin.x + (tip.x - origin.x) * along,
             origin.y + (tip.y - origin.y) * along,
         )
+        nodes += node
         drawLeafPair(
             node = node,
             axisAngle = tipAngle,
@@ -187,6 +263,10 @@ fun DrawScope.drawSprig(
             wilted = wilted,
             outlineWidth = (heightPx * 0.012f).coerceAtLeast(0.8f),
         )
+    }
+
+    if (!wilted) {
+        drawInflorescence(tip, nodes, tipAngle, heightPx, species.art.flower, flowerColour)
     }
 }
 
@@ -207,13 +287,14 @@ fun SpeciesEmblem(
             .semantics { contentDescription = "${species.commonName} sprig" },
     ) {
         drawSprig(
-            origin = Offset(this.size.width / 2f, this.size.height * 0.95f),
-            heightPx = this.size.height * 0.78f,
+            origin = Offset(this.size.width / 2f, this.size.height * 0.80f),
+            heightPx = this.size.height * 0.62f,
             angle = -(PI / 2).toFloat(),
             species = species,
             leafColour = leaf,
             stemColour = stem,
             leafPairs = 3,
+            flowerColour = if (unlocked) palette.flower else palette.chartGrid,
         )
     }
 }
