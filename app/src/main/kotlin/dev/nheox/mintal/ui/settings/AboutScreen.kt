@@ -56,6 +56,17 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
             }
 
+            SectionCard(title = "How this was built") {
+                Text(
+                    text = "Mintal was written with Claude, Anthropic's coding " +
+                        "assistant, from a written specification. The decisions, the " +
+                        "testing and the judgement are the author's; the code was " +
+                        "written by Claude under that direction. Every commit in the " +
+                        "repository records it.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
             SectionCard(title = "The mints") {
                 Text(
                     text = "Every plant in Mintal is a real member of the genus Mentha, with " +

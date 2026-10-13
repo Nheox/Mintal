@@ -90,6 +90,22 @@ app/src/main/kotlin/dev/nheox/mintal/
 └── ui/          radial-hub home, session flow, grove, stats, tags, species, settings
 ```
 
+## How this was built
+
+Mintal was written with Claude, Anthropic's coding assistant, working from the product
+specification in this repository. The specification, the product decisions, the testing on
+real hardware and the judgement about what was wrong came from the author; Claude wrote
+the code under that direction.
+
+The history records it rather than just claiming it: every commit carries a
+`Co-Authored-By: Claude` trailer, so you can see exactly which changes were written that
+way — `git log` will tell you, not this paragraph.
+
+It is written down because the app asks you to believe things about itself: that it holds
+no network permission, that nothing is sent anywhere, that no code or art was taken from
+another app. Those claims are checkable in the source, and how the source came to exist
+belongs to the same accounting.
+
 ## Licence
 
 GPL-3.0. See [LICENSE](LICENSE).
