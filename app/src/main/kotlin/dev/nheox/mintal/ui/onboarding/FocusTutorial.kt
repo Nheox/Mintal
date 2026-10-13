@@ -41,7 +41,11 @@ import dev.nheox.mintal.ui.components.drawPlant
 import dev.nheox.mintal.ui.theme.mintalPalette
 
 /**
- * The whole app in three beats: set a length, put the phone down, watch it grow.
+ * The whole app in three beats. The captions have one job between them: that someone who
+ * has never opened Mintal understands it is a timer, that the point is to leave the
+ * phone alone while it runs, and that doing so grows a real species of mint. Each beat
+ * leads with the instruction and explains itself underneath — "focus time" is jargon for
+ * a thing everyone already has a word for, which is a timer.
  *
  * Drawn rather than played. A video or GIF would be a megabyte of asset, and Mintal
  * downloads nothing at runtime and ships nothing it cannot build from source (spec §9),
@@ -51,10 +55,12 @@ import dev.nheox.mintal.ui.theme.mintalPalette
 private const val BEATS = 3
 private const val BEAT_MILLIS = 2_600
 
-private val CAPTIONS = listOf(
-    "Set how long you want to focus",
-    "Put the phone down and leave it alone",
-    "The session is planted in your Grove",
+private data class Beat(val instruction: String, val detail: String)
+
+private val BEAT_COPY = listOf(
+    Beat("Set the timer", "Choose how long you want to concentrate."),
+    Beat("Keep off the phone", "Leave the app while it runs and the session fails."),
+    Beat("Plant a mint", "Finish it and a real species of Mentha grows in your Grove."),
 )
 
 @Composable
@@ -79,9 +85,9 @@ fun FocusTutorial(
             modifier = modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            CAPTIONS.forEachIndexed { index, caption ->
+            BEAT_COPY.forEachIndexed { index, beat ->
                 Text(
-                    text = "${index + 1}. $caption",
+                    text = "${index + 1}. ${beat.instruction} — ${beat.detail}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -125,7 +131,8 @@ fun FocusTutorialFrame(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "How it works: " + CAPTIONS.joinToString(", then ")
+                contentDescription = "How it works: " +
+                    BEAT_COPY.joinToString(", then ") { it.instruction }
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -139,7 +146,13 @@ fun FocusTutorialFrame(
         }
 
         Text(
-            text = CAPTIONS[beat],
+            text = BEAT_COPY[beat].instruction,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = BEAT_COPY[beat].detail,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

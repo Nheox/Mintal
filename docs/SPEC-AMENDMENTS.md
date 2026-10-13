@@ -187,15 +187,44 @@ under *Device* ("Ask Android not to kill running sessions") and under *Permissio
 ("Not being killed mid-session") — two names for one system screen — so the *Device* card
 is gone and its action lives with the other permissions.
 
+## §4 — First launch, as four slides (replaces the single first-run page)
+
+One idea per slide, swipeable, with a thin progress bar and a Next button:
+
+1. **Mintal**, the slogan, and a flowering sprig of the catalogue's first mint — drawn
+   with the app's own plant code, so the first thing seen is the thing itself rather
+   than a logo of it.
+2. **How it works** — the tutorial.
+3. **What Mintal promises** — the three principles.
+4. **One permission** — the notification note, and the button that asks for it. Absent
+   below Android 13, where the permission is granted at install time; the deck is three
+   slides there.
+
+The order is the order the questions arrive in: what is this, what does it do, what will
+it do to me, what does it want. System back steps back a slide rather than leaving.
+
+The principles slide is where the "don't show this again" tick lives, in the footer
+beside Next. The recurring gate afterwards shows the name, the slogan and the three
+promises — not the tutorial, which is a first-run thing.
+
 ## §4 — The slogan and the tutorial (new)
 
 Mintal's line is **"Stay focused, stay mintalized"**. It sits under the name on the
-principles screen and in About.
+first slide, on the principles gate, and in About.
 
-Under it, a **three-beat animated tutorial**, looping: set how long you want to focus
-(the growth track, with the bud marker sliding out), put the phone down and leave it
-alone (a phone tipping face-down with the session bar still running on it), the session
-is planted in your Grove (a real mint gaining nodes). Three dots mark the beat.
+A **three-beat animated tutorial**, looping, each beat an instruction with a line of
+explanation under it:
+
+| Beat | Instruction | Detail | Drawn as |
+|---|---|---|---|
+| 1 | Set the timer | Choose how long you want to concentrate. | the growth track, bud marker sliding out |
+| 2 | Keep off the phone | Leave the app while it runs and the session fails. | a phone tipping face-down, session bar still running |
+| 3 | Plant a mint | Finish it and a real species of *Mentha* grows in your Grove. | a real mint gaining nodes |
+
+Between them the three captions have one job: that someone who has never opened Mintal
+understands it is **a timer**, that the point is to **leave the phone alone** while it
+runs, and that doing so **grows a real species of mint**. "Focus time" was jargon for a
+thing everyone already has a word for.
 
 It is **drawn, not played**: the same Compose canvas and the same `drawPlant` the Grove
 uses, so there is no video or GIF asset to ship, nothing is fetched at runtime, and the

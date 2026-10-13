@@ -40,7 +40,8 @@ been exercised by reading the code.
 | The Grove could be dragged into nowhere | Fixed — panning keeps 30% of each axis on content, and a **Reset view** button appears once the view has been moved. Invariant covered by a test. |
 | A young Grove is drawn too small | Fixed — the band is framed against what is actually in it, between one mature plant and one seedling. |
 | No slogan | Added — "Stay focused, stay mintalized", under the name on the principles screen and in About. |
-| No tutorial | Added — a looping three-beat animation (set a length, put the phone down, watch it grow), drawn with the app's own plant code rather than shipped as a video. Falls back to plain numbered text where animations are turned off. |
+| No tutorial | Added — a looping three-beat animation (set the timer, keep off the phone, plant a mint), drawn with the app's own plant code rather than shipped as a video. Falls back to plain numbered text where animations are turned off. |
+| First run was one long page | Split into four swipeable slides: name and slogan, the tutorial, the promises, the permission. One idea each, centred, with the action pinned to the bottom. |
 | The notification note had a tick-box | Removed, and with it the whole permission-note dismissal: the note is an advert for the permission with the grant button under it, shown once before Android asks. |
 
 ## Needs the owner before release

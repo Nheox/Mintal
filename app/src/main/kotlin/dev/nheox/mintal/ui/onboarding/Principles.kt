@@ -27,15 +27,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.data.prefs.MintalPreferences
-import dev.nheox.mintal.data.species.SpeciesCatalog
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -51,32 +47,10 @@ const val MINTAL_SLOGAN = "Stay focused, stay mintalized"
  * find is not much of a promise.
  */
 @Composable
-fun PrinciplesBody(
-    tutorialSpecies: Species? = null,
-    /** Pins the tutorial to one frame instead of animating it; used by the renders. */
-    tutorialProgress: Float? = null,
-) {
-    Text(
-        text = MINTAL_SLOGAN,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth(),
-    )
-
-    if (tutorialProgress == null) {
-        FocusTutorial(species = tutorialSpecies)
-    } else {
-        FocusTutorialFrame(species = tutorialSpecies, progress = tutorialProgress)
-    }
-
-    Text(
-        text = "Choose how long you want to concentrate. Stay off the phone and the " +
-            "session is planted in the Grove: a bed of real mints that grows with every " +
-            "block of attention you finish.",
-        style = MaterialTheme.typography.bodyLarge,
-    )
-
+fun PrinciplesBody() {
+    // No preamble: the tutorial slide before this one has just said what the app does,
+    // and the three cards are the promises. Saying it twice is how the page became a
+    // wall in the first place.
     SectionCard(title = "It stays on this device") {
         Text(
             text = "No account, no server, no analytics, no ads, nothing for sale. " +
@@ -121,38 +95,37 @@ fun PrinciplesFooter(
 ) {
     Surface(color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = dismissed, onCheckedChange = onDismissedChange)
-                Text(
-                    text = "Don't show this again — it stays in Settings",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
+            PrinciplesTick(dismissed = dismissed, onDismissedChange = onDismissedChange)
             Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
+/** The one tick-box in the app, wherever the principles are being shown. */
+@Composable
+fun PrinciplesTick(
+    dismissed: Boolean,
+    onDismissedChange: (Boolean) -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = dismissed, onCheckedChange = onDismissedChange)
+        Text(
+            text = "Don't show this again — it stays in Settings",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 4.dp),
+        )
+    }
+}
+
 @HiltViewModel
 class PrinciplesViewModel @Inject constructor(
     private val preferences: MintalPreferences,
-    speciesCatalog: SpeciesCatalog,
 ) : ViewModel() {
 
     val dismissed: StateFlow<Boolean> = preferences.settings
         .map { it.principlesDismissed }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    private val _tutorialSpecies = MutableStateFlow<Species?>(null)
-
-    /** The mint the tutorial grows: the catalogue's first, so it is never invented. */
-    val tutorialSpecies: StateFlow<Species?> = _tutorialSpecies.asStateFlow()
-
-    init {
-        viewModelScope.launch { _tutorialSpecies.value = speciesCatalog.all().firstOrNull() }
-    }
 
     fun setDismissed(value: Boolean) = viewModelScope.launch {
         preferences.setPrinciplesDismissed(value)
@@ -171,7 +144,6 @@ fun PrinciplesScreen(
 ) {
     val viewModel: PrinciplesViewModel = hiltViewModel()
     val dismissed by viewModel.dismissed.collectAsStateWithLifecycle()
-    val species by viewModel.tutorialSpecies.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -207,8 +179,15 @@ fun PrinciplesScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            Text(
+                text = MINTAL_SLOGAN,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-            PrinciplesBody(tutorialSpecies = species)
+            PrinciplesBody()
 
             Spacer(modifier = Modifier.height(16.dp))
         }
