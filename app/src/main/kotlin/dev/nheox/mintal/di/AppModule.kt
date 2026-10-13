@@ -15,6 +15,8 @@ import dev.nheox.mintal.data.db.dao.AllowedAppDao
 import dev.nheox.mintal.data.db.dao.SessionDao
 import dev.nheox.mintal.data.db.dao.SpeciesDao
 import dev.nheox.mintal.data.db.dao.TagDao
+import dev.nheox.mintal.data.repository.RepositorySessionStore
+import dev.nheox.mintal.domain.session.SessionStore
 import javax.inject.Singleton
 
 @Module
@@ -41,8 +43,11 @@ object DatabaseModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ClockModule {
+abstract class BindingsModule {
 
     @Binds
     abstract fun bindClock(impl: SystemMintalClock): MintalClock
+
+    @Binds
+    abstract fun bindSessionStore(impl: RepositorySessionStore): SessionStore
 }

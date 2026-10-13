@@ -30,8 +30,9 @@ settling. That makes some contributions much easier to accept than others.
 
 1. **UI strings are hardcoded in Compose** rather than in `strings.xml`. Moving them is
    mechanical, unlocks translation, and is genuinely useful.
-2. **No instrumented tests yet.** The session engine is unit-testable; the foreground
-   service and the Compose screens are not covered.
+2. **No instrumented tests yet.** The session state machine, statistics, Grove layout,
+   milestones, CSV export and time bucketing are unit-tested; the foreground service, the
+   database and the Compose screens are not covered at all.
 3. **Procedural artwork.** The mints are drawn from botanical parameters. An illustrator's
    set would replace `ui/components/MintArt.kt`.
 

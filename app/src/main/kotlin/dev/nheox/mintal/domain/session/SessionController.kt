@@ -6,8 +6,6 @@ import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.db.entity.SessionEntity
-import dev.nheox.mintal.data.repository.SessionRepository
-import dev.nheox.mintal.data.repository.SpeciesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,8 +60,7 @@ sealed interface SessionResult {
  */
 @Singleton
 class SessionController @Inject constructor(
-    private val sessionRepository: SessionRepository,
-    private val speciesRepository: SpeciesRepository,
+    private val store: SessionStore,
     private val clock: MintalClock,
 ) {
     private val finishLock = Mutex()
@@ -195,9 +192,9 @@ class SessionController @Inject constructor(
                 note = null,
                 timezoneId = MintalTime.systemZone().id,
             )
-            val id = sessionRepository.record(entity)
+            val id = store.record(entity)
             val unlocked = if (outcome.isSuccess) {
-                speciesRepository.refreshUnlocks(endedAt)
+                store.refreshUnlocks(endedAt)
             } else {
                 emptyList()
             }

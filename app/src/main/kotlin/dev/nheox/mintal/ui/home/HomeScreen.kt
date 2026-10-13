@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -324,7 +325,18 @@ private fun HubRing(
             .fillMaxWidth()
             .height(340.dp),
     ) {
-        val radius = minOf(maxWidth, maxHeight) * 0.40f
+        // Everything is sized from the space actually available. With a fixed radius and
+        // fixed tiles, a narrow screen pushes the tiles through the centre button.
+        val shortest = minOf(maxWidth, maxHeight)
+        val tileSize = (shortest * 0.30f).coerceIn(80.dp, 112.dp)
+        // Keeps the diagonal tiles inside the box: 0.707 * radius + half a tile + margin.
+        val radius = ((shortest / 2f) - (tileSize / 2f) - 8.dp) * 1.414f
+        val centreSize = (shortest * 0.42f)
+            .coerceIn(96.dp, 160.dp)
+            // ...and never closer than 10dp to the ring of tiles.
+            .coerceAtMost((radius - tileSize / 2f - 10.dp) * 2f)
+            .coerceAtLeast(72.dp)
+
         tiles.forEachIndexed { index, tile ->
             val angle = (-135f + index * 90f) * PI.toFloat() / 180f
             Box(
@@ -332,13 +344,13 @@ private fun HubRing(
                     .align(Alignment.Center)
                     .offset(x = radius * cos(angle), y = radius * sin(angle)),
             ) {
-                HubTile(tile)
+                HubTile(spec = tile, size = tileSize)
             }
         }
         Surface(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(150.dp),
+                .size(centreSize),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primary,
             onClick = onStart,
@@ -372,9 +384,9 @@ private fun HubRing(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HubTile(spec: HubTileSpec) {
+private fun HubTile(spec: HubTileSpec, size: Dp) {
     Surface(
-        modifier = Modifier.size(104.dp),
+        modifier = Modifier.size(size),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
         onClick = spec.onClick,
