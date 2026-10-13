@@ -54,7 +54,8 @@ fun GroveScreen(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "${state.sessionCount} sessions · ${state.days.size} days",
+                    text = "${state.sessionCount} sessions · ${state.plantCount} plants · " +
+                        "${state.days.size} days",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -70,7 +71,8 @@ fun GroveScreen(
                 if (state.layout.isEmpty) {
                     EmptyState(
                         message = "Nothing has grown yet. Finish a session and the first " +
-                            "runner appears here — every session after that grafts onto it.",
+                            "mint goes in — every session after that adds a node to it, " +
+                            "until it is full grown and the next one starts a new plant.",
                     )
                 } else {
                     GroveCanvas(

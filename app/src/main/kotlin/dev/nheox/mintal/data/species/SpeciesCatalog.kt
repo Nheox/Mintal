@@ -5,9 +5,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.nheox.mintal.core.model.FlowerForm
 import dev.nheox.mintal.core.model.GrowthHabit
 import dev.nheox.mintal.core.model.LeafAttachment
+import dev.nheox.mintal.core.model.LeafFlush
 import dev.nheox.mintal.core.model.LeafHue
 import dev.nheox.mintal.core.model.LeafMargin
 import dev.nheox.mintal.core.model.LeafShape
+import dev.nheox.mintal.core.model.LeafSurface
+import dev.nheox.mintal.core.model.Pubescence
 import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.model.SpeciesArt
 import dev.nheox.mintal.core.model.StemHue
@@ -61,11 +64,16 @@ class SpeciesCatalog @Inject constructor(
                 art = SpeciesArt(
                     leafShape = art.getString("leafShape").toEnum(LeafShape.OVATE),
                     margin = art.getString("margin").toEnum(LeafMargin.SERRATE),
+                    surface = art.optString("surface").toEnum(LeafSurface.SMOOTH),
+                    pubescence = art.optString("pubescence").toEnum(Pubescence.NONE),
+                    flush = art.optString("flush").toEnum(LeafFlush.NONE),
                     habit = art.getString("habit").toEnum(GrowthHabit.UPRIGHT),
                     leafScale = art.optDouble("leafScale", 1.0).toFloat(),
                     leafHue = art.getString("leafHue").toEnum(LeafHue.LEAF_MID),
                     stemHue = art.getString("stemHue").toEnum(StemHue.STEM_GREEN),
                     attachment = art.optString("attachment").toEnum(LeafAttachment.SESSILE),
+                    stemHairy = art.optBoolean("stemHairy", false),
+                    variegated = art.optBoolean("variegated", false),
                     flower = art.optString("flower").toEnum(FlowerForm.NONE),
                 ),
             )

@@ -39,6 +39,7 @@ internal object MintalPaletteValues {
 
     // Botanical hues, used by the procedural mint art and the Grove
     val LeafPale = Color(0xFFB8DEBD)
+    val LeafBright = Color(0xFF72BE55)
     val LeafMid = Color(0xFF66A86F)
     val LeafDark = Color(0xFF2F6D4F)
     val LeafBlue = Color(0xFF6FA8A6)
@@ -46,10 +47,19 @@ internal object MintalPaletteValues {
     val LeafGrey = Color(0xFF9FB3A4)
     val StemGreen = Color(0xFF4C8A5E)
     val StemPurple = Color(0xFF6E5E8A)
+    val StemRedPurple = Color(0xFF8A4B6B)
+    val StemPurpleBrown = Color(0xFF6B4A4E)
+    val StemRedBrown = Color(0xFF5E3A33)
     val StemGrey = Color(0xFF8C9A90)
     val StemBrown = Color(0xFF6E5243)
     val Wilted = Color(0xFFB08A5E)
     val FlowerLilac = Color(0xFFB9A6D6)
+    // Washes over a blade that is not the leaf's own green, and the pale fuzz of a
+    // woolly or downy surface. Both are drawn over the fill, so both are translucent.
+    val FlushPurple = Color(0x6E8A5E96)
+    val FlushBronze = Color(0x77A4703C)
+    val Hair = Color(0xCCEAF3EC)
+    val Variegation = Color(0xFFD8CE78)
     val FlowerLilacDark = Color(0xFFCDBCE6)
 }
 
@@ -64,6 +74,11 @@ data class MintalPalette(
     val groveGlow: Color,
     val wilted: Color,
     val flower: Color,
+    val leafHair: Color,
+    val variegation: Color,
+    val flushPurple: Color,
+    val flushBronze: Color,
+    val groveGround: Color,
     val barTrack: Color,
     val barFill: Color,
     val barFillSpent: Color,
@@ -84,6 +99,7 @@ data class MintalPalette(
 
 private val sharedLeafHues = mapOf(
     LeafHue.LEAF_PALE to MintalPaletteValues.LeafPale,
+    LeafHue.LEAF_BRIGHT to MintalPaletteValues.LeafBright,
     LeafHue.LEAF_MID to MintalPaletteValues.LeafMid,
     LeafHue.LEAF_DARK to MintalPaletteValues.LeafDark,
     LeafHue.LEAF_BLUE to MintalPaletteValues.LeafBlue,
@@ -94,6 +110,9 @@ private val sharedLeafHues = mapOf(
 private val sharedStemHues = mapOf(
     StemHue.STEM_GREEN to MintalPaletteValues.StemGreen,
     StemHue.STEM_PURPLE to MintalPaletteValues.StemPurple,
+    StemHue.STEM_RED_PURPLE to MintalPaletteValues.StemRedPurple,
+    StemHue.STEM_PURPLE_BROWN to MintalPaletteValues.StemPurpleBrown,
+    StemHue.STEM_RED_BROWN to MintalPaletteValues.StemRedBrown,
     StemHue.STEM_GREY to MintalPaletteValues.StemGrey,
     StemHue.STEM_BROWN to MintalPaletteValues.StemBrown,
 )
@@ -110,6 +129,11 @@ val MintalLightPalette = MintalPalette(
     groveGlow = MintalPaletteValues.Mint80,
     wilted = MintalPaletteValues.Wilted,
     flower = MintalPaletteValues.FlowerLilac,
+    leafHair = MintalPaletteValues.Hair,
+    variegation = MintalPaletteValues.Variegation,
+    flushPurple = MintalPaletteValues.FlushPurple,
+    flushBronze = MintalPaletteValues.FlushBronze,
+    groveGround = MintalPaletteValues.Mint80,
     barTrack = MintalPaletteValues.Mint90,
     barFill = MintalPaletteValues.Mint40,
     barFillSpent = MintalPaletteValues.Mint60,
@@ -127,6 +151,11 @@ val MintalDarkPalette = MintalPalette(
     groveGlow = MintalPaletteValues.Mint30,
     wilted = MintalPaletteValues.Wilted,
     flower = MintalPaletteValues.FlowerLilacDark,
+    leafHair = MintalPaletteValues.Hair,
+    variegation = MintalPaletteValues.Variegation,
+    flushPurple = MintalPaletteValues.FlushPurple,
+    flushBronze = MintalPaletteValues.FlushBronze,
+    groveGround = MintalPaletteValues.Mint30,
     barTrack = MintalPaletteValues.Mint20,
     barFill = MintalPaletteValues.Mint60,
     barFillSpent = MintalPaletteValues.Mint40,

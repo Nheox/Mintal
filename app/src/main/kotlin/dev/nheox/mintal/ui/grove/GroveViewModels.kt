@@ -32,11 +32,17 @@ import javax.inject.Inject
 
 data class GroveUiState(
     val loading: Boolean = true,
-    val layout: GroveLayout = GroveLayout(emptyList(), emptyList(), GroveBounds(-1f, -1f, 1f, 1f)),
+    val layout: GroveLayout = GroveLayout(
+        emptyList(),
+        emptyList(),
+        emptyList(),
+        GroveBounds(-1f, -1f, 1f, 1f),
+    ),
     val speciesById: Map<String, Species> = emptyMap(),
     val days: List<GroveDayAnchor> = emptyList(),
     val totalSuccessfulSeconds: Int = 0,
     val sessionCount: Int = 0,
+    val plantCount: Int = 0,
 )
 
 @HiltViewModel
@@ -50,16 +56,24 @@ class GroveViewModel @Inject constructor(
         sessionRepository.observeAll(),
         preferences.settings,
     ) { sessions, settings ->
-        val layout = GroveLayoutBuilder.build(sessions, settings.dayStartMinutes)
+        // The catalogue decides each plant's habit, so the layout needs it to place a
+        // creeping mat differently from a tall stand.
+        val catalogue = speciesRepository.catalogue().associateBy { it.id }
+        val layout = GroveLayoutBuilder.build(
+            sessions = sessions,
+            speciesById = catalogue,
+            dayStartMinutes = settings.dayStartMinutes,
+        )
         GroveUiState(
             loading = false,
             layout = layout,
-            speciesById = speciesRepository.catalogue().associateBy { it.id },
+            speciesById = catalogue,
             days = layout.anchors.sortedByDescending { it.epochDay },
             totalSuccessfulSeconds = sessions
                 .filter { it.outcome == SessionOutcome.SUCCESS }
                 .sumOf { it.actualSeconds },
             sessionCount = sessions.size,
+            plantCount = layout.plantCount,
         )
     }.flowOn(Dispatchers.Default).stateIn(
         viewModelScope,
