@@ -339,3 +339,113 @@ fun HomeScreen(
             },
         )
     }
+}
+
+private data class HubTileSpec(
+    val label: String,
+    val detail: String,
+    val onClick: () -> Unit,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HubRing(
+    centreLabel: String,
+    centreDetail: String,
+    onStart: () -> Unit,
+    tiles: List<HubTileSpec>,
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(340.dp),
+    ) {
+        // Everything is sized from the space actually available. With a fixed radius and
+        // fixed tiles, a narrow screen pushes the tiles through the centre button.
+        val shortest = minOf(maxWidth, maxHeight)
+        val tileSize = (shortest * 0.30f).coerceIn(80.dp, 112.dp)
+        // Keeps the diagonal tiles inside the box: 0.707 * radius + half a tile + margin.
+        val radius = ((shortest / 2f) - (tileSize / 2f) - 8.dp) * 1.414f
+        val centreSize = (shortest * 0.42f)
+            .coerceIn(96.dp, 160.dp)
+            // ...and never closer than 10dp to the ring of tiles.
+            .coerceAtMost((radius - tileSize / 2f - 10.dp) * 2f)
+            .coerceAtLeast(72.dp)
+
+        tiles.forEachIndexed { index, tile ->
+            val angle = (-135f + index * 90f) * PI.toFloat() / 180f
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(x = radius * cos(angle), y = radius * sin(angle)),
+            ) {
+                HubTile(spec = tile, size = tileSize)
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(centreSize),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            onClick = onStart,
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = centreLabel,
+                    style = MintalTextStyles.timerSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1,
+                )
+                Text(
+                    text = centreDetail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "START",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HubTile(spec: HubTileSpec, size: Dp) {
+    Surface(
+        modifier = Modifier.size(size),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        onClick = spec.onClick,
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = spec.label,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = spec.detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
