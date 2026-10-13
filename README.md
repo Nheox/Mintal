@@ -1,2 +1,2 @@
 # Mintal
-Open focus timer for studying
+An open focus timer to study
