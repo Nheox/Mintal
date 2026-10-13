@@ -133,7 +133,10 @@ class FocusSessionService : Service() {
 
     private fun goForeground() {
         val running = controller.running.value
-        val notification = notifications.build(running, speciesNames[running?.speciesId])
+        val notification = notifications.build(
+            running,
+            running?.speciesId?.let { speciesNames[it] },
+        )
         val type = if (Build.VERSION.SDK_INT >= 34) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
         } else {
