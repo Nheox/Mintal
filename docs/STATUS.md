@@ -42,7 +42,10 @@ been exercised by reading the code.
 | No slogan | Added — "Stay focused, stay mintalized", under the name on the principles screen and in About. |
 | No tutorial | Added — a looping three-beat animation (set the timer, keep off the phone, plant a mint), drawn with the app's own plant code rather than shipped as a video. Falls back to plain numbered text where animations are turned off. |
 | First run was one long page | Split into four swipeable slides: name and slogan, the tutorial, the promises, the permission. One idea each, centred, with the action pinned to the bottom. |
-| The phone's nav buttons covered the Next button | Fixed — both custom bottom bars pad for the navigation bar. The renderer can now fake those buttons, so the bug is visible here rather than only on a device. |
+| The phone's nav buttons covered the Next button | Fixed — the first-run footer pads for the navigation bar. The renderer can fake those buttons, and the clearance is measured: exactly one bar's worth, applied once. |
+| The principles returned at every launch | Removed — they are read once in the first-run deck and kept in Settings. No gate, no tick-box, no stored state. |
+| A dot at the end of the progress bar | Removed — Material 3's stop indicator, switched off on all three progress bars. |
+| Three buttons on the result screen, two alike | Cut to **Save** and **Discard**. "Save and start another" navigated exactly where "Save" did. |
 | The notification note had a tick-box | Removed, and with it the whole permission-note dismissal: the note is an advert for the permission with the grant button under it, shown once before Android asks. |
 
 ## Needs the owner before release
@@ -70,8 +73,8 @@ been exercised by reading the code.
 1. Install this build and exercise the new flows: arm a session and cancel it; arm one
    and let it run; refuse the notification permission and check a session still runs;
    reach a milestone and pick a mint; fill a plant to twelve nodes and watch the next
-   session start a new one; relaunch twice to see the principles return, then tick the
-   box and confirm they stop and are still in Settings.
+   session start a new one; and check that the second launch goes straight to the hub
+   with the principles still at Settings → Mintal's principles.
 2. Fill in the donation URL.
 3. UI strings into `strings.xml`, then the Spanish translation.
 4. Accessibility pass: TalkBack labels on hub tiles, chips and the mint chooser, contrast

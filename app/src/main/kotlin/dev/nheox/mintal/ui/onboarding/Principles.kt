@@ -2,7 +2,6 @@ package dev.nheox.mintal.ui.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
@@ -15,32 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** The line under the name, wherever the name appears. */
 const val MINTAL_SLOGAN = "Stay focused, stay mintalized"
@@ -87,97 +69,13 @@ fun PrinciplesBody() {
 }
 
 /**
- * The tick and the way on, pinned to the bottom. With a tutorial and three cards above
- * them they would otherwise sit below the fold, and a dismissal you have to go looking
- * for is not much of a dismissal either.
+ * The principles, kept where they can always be found: Settings → Mintal's principles.
+ * The first-run deck is where they are first read; nothing makes anyone read them twice.
  */
 @Composable
-fun PrinciplesFooter(
-    dismissed: Boolean,
-    onDismissedChange: (Boolean) -> Unit,
-    actionLabel: String,
-    onAction: () -> Unit,
-) {
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Material's Scaffold pads its own BottomAppBar for the system bars but
-                // not a hand-made one, so without this the button sits underneath the
-                // phone's back/home/recents buttons and cannot be pressed at all.
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
-                    ),
-                )
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-        ) {
-            PrinciplesTick(dismissed = dismissed, onDismissedChange = onDismissedChange)
-            Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-/** The one tick-box in the app, wherever the principles are being shown. */
-@Composable
-fun PrinciplesTick(
-    dismissed: Boolean,
-    onDismissedChange: (Boolean) -> Unit,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked = dismissed, onCheckedChange = onDismissedChange)
-        Text(
-            text = "Don't show this again — it stays in Settings",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 4.dp),
-        )
-    }
-}
-
-@HiltViewModel
-class PrinciplesViewModel @Inject constructor(
-    private val preferences: MintalPreferences,
-) : ViewModel() {
-
-    val dismissed: StateFlow<Boolean> = preferences.settings
-        .map { it.principlesDismissed }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    fun setDismissed(value: Boolean) = viewModelScope.launch {
-        preferences.setPrinciplesDismissed(value)
-    }
-}
-
-/**
- * The principles on their own: as the gate before the hub on every launch until it is
- * dismissed ([onContinue] carries on into the app), or opened from Settings to read
- * again ([onBack] pops).
- */
-@Composable
-fun PrinciplesScreen(
-    onContinue: (() -> Unit)? = null,
-    onBack: (() -> Unit)? = null,
-) {
-    val viewModel: PrinciplesViewModel = hiltViewModel()
-    val dismissed by viewModel.dismissed.collectAsStateWithLifecycle()
-
+fun PrinciplesScreen(onBack: () -> Unit) {
     Scaffold(
-        topBar = {
-            if (onBack != null) {
-                MintalTopBar(title = "Mintal's principles", onBack = onBack)
-            }
-        },
-        bottomBar = {
-            if (onContinue != null) {
-                PrinciplesFooter(
-                    dismissed = dismissed,
-                    onDismissedChange = viewModel::setDismissed,
-                    actionLabel = "Start focusing",
-                    onAction = onContinue,
-                )
-            }
-        },
+        topBar = { MintalTopBar(title = "Mintal's principles", onBack = onBack) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -188,14 +86,6 @@ fun PrinciplesScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            if (onBack == null) {
-                Text(
-                    text = "Mintal",
-                    style = MaterialTheme.typography.displayLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
             Text(
                 text = MINTAL_SLOGAN,
                 style = MaterialTheme.typography.titleMedium,

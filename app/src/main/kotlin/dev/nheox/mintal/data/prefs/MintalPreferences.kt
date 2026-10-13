@@ -40,12 +40,6 @@ data class MintalSettings(
     val detectLeavingApp: Boolean = true,
     val detectForegroundApp: Boolean = false,
     val onboardingComplete: Boolean = false,
-    /**
-     * Whether the reader has ticked "don't show this again" on the principles. Until
-     * they do, the principles stand in front of the hub at every launch — they are the
-     * product's claims about itself, not a welcome screen to be clicked past once.
-     */
-    val principlesDismissed: Boolean = false,
     val starterTagsSeeded: Boolean = false,
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
 )
@@ -66,7 +60,6 @@ class MintalPreferences @Inject constructor(
         val DETECT_LEAVING = booleanPreferencesKey("detect_leaving_app")
         val DETECT_FOREGROUND = booleanPreferencesKey("detect_foreground_app")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_complete")
-        val PRINCIPLES_DISMISSED = booleanPreferencesKey("principles_dismissed")
         val STARTER_TAGS = booleanPreferencesKey("starter_tags_seeded")
         val THEME = stringPreferencesKey("theme")
     }
@@ -90,7 +83,6 @@ class MintalPreferences @Inject constructor(
                 detectLeavingApp = prefs[Keys.DETECT_LEAVING] ?: true,
                 detectForegroundApp = prefs[Keys.DETECT_FOREGROUND] ?: false,
                 onboardingComplete = prefs[Keys.ONBOARDING_DONE] ?: false,
-                principlesDismissed = prefs[Keys.PRINCIPLES_DISMISSED] ?: false,
                 starterTagsSeeded = prefs[Keys.STARTER_TAGS] ?: false,
                 theme = runCatching { ThemeChoice.valueOf(prefs[Keys.THEME] ?: "") }
                     .getOrDefault(ThemeChoice.SYSTEM),
@@ -119,9 +111,6 @@ class MintalPreferences @Inject constructor(
 
     suspend fun setOnboardingComplete(complete: Boolean) = edit { it[Keys.ONBOARDING_DONE] = complete }
 
-    suspend fun setPrinciplesDismissed(dismissed: Boolean) =
-        edit { it[Keys.PRINCIPLES_DISMISSED] = dismissed }
-
     suspend fun setStarterTagsSeeded(seeded: Boolean) = edit { it[Keys.STARTER_TAGS] = seeded }
 
     suspend fun setTheme(theme: ThemeChoice) = edit { it[Keys.THEME] = theme.name }
@@ -139,7 +128,6 @@ class MintalPreferences @Inject constructor(
         prefs[Keys.DETECT_LEAVING] = settings.detectLeavingApp
         prefs[Keys.DETECT_FOREGROUND] = settings.detectForegroundApp
         prefs[Keys.ONBOARDING_DONE] = settings.onboardingComplete
-        prefs[Keys.PRINCIPLES_DISMISSED] = settings.principlesDismissed
         prefs[Keys.STARTER_TAGS] = settings.starterTagsSeeded
         prefs[Keys.THEME] = settings.theme.name
     }

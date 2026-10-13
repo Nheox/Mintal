@@ -43,7 +43,6 @@ import dev.nheox.mintal.ui.components.StatLine
 @Composable
 fun SessionResultScreen(
     onDone: () -> Unit,
-    onStartAnother: () -> Unit,
     onChooseMint: () -> Unit,
 ) {
     val viewModel: SessionResultViewModel = hiltViewModel()
@@ -158,6 +157,9 @@ fun SessionResultScreen(
                 minLines = 2,
             )
 
+            // Two buttons, because there were only ever two outcomes. "Save and start
+            // another" went to the same place as "Save" — the hub is where another
+            // session starts from — so it promised a difference it did not make.
             Button(
                 onClick = {
                     viewModel.save()
@@ -168,19 +170,11 @@ fun SessionResultScreen(
 
             OutlinedButton(
                 onClick = {
-                    viewModel.save()
-                    onStartAnother()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Save and start another") }
-
-            TextButton(
-                onClick = {
                     viewModel.dismiss()
                     onDone()
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Discard changes and go home") }
+            ) { Text("Discard") }
 
             Spacer(modifier = Modifier.height(20.dp))
         }

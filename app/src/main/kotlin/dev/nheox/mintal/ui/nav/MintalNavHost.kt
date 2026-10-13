@@ -39,16 +39,6 @@ fun MintalNavHost(startDestination: String) {
             )
         }
 
-        composable(Routes.PRINCIPLES_GATE) {
-            PrinciplesScreen(
-                onContinue = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.PRINCIPLES_GATE) { inclusive = true }
-                    }
-                },
-            )
-        }
-
         composable(Routes.PRINCIPLES) {
             PrinciplesScreen(onBack = { navController.popBackStack() })
         }
@@ -109,11 +99,6 @@ fun MintalNavHost(startDestination: String) {
         ) {
             SessionResultScreen(
                 onDone = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.HOME) { inclusive = true }
-                    }
-                },
-                onStartAnother = {
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.HOME) { inclusive = true }
                     }

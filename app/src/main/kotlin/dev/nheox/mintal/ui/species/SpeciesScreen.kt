@@ -113,6 +113,7 @@ fun SpeciesScreen(onBack: () -> Unit, onChooseMint: () -> Unit) {
                         LinearProgressIndicator(
                             progress = { state.progress },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            drawStopIndicator = {},
                         )
                     } else {
                         Text(

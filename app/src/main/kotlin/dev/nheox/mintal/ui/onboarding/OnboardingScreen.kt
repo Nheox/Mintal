@@ -67,10 +67,6 @@ class OnboardingViewModel @Inject constructor(
     speciesCatalog: SpeciesCatalog,
 ) : ViewModel() {
 
-    val principlesDismissed: StateFlow<Boolean> = preferences.settings
-        .map { it.principlesDismissed }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
     private val _tutorialSpecies = MutableStateFlow<Species?>(null)
 
     /** The mint the tutorial grows: the catalogue's first, so it is never invented. */
@@ -85,9 +81,6 @@ class OnboardingViewModel @Inject constructor(
         onDone()
     }
 
-    fun setPrinciplesDismissed(value: Boolean) = viewModelScope.launch {
-        preferences.setPrinciplesDismissed(value)
-    }
 }
 
 /**
@@ -103,7 +96,6 @@ class OnboardingViewModel @Inject constructor(
 fun OnboardingScreen(onDone: () -> Unit) {
     val viewModel: OnboardingViewModel = hiltViewModel()
     val context = LocalContext.current
-    val principlesDismissed by viewModel.principlesDismissed.collectAsStateWithLifecycle()
     val species by viewModel.tutorialSpecies.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
@@ -132,8 +124,6 @@ fun OnboardingScreen(onDone: () -> Unit) {
             OnboardingFooter(
                 page = pager.currentPage,
                 slides = slides,
-                principlesDismissed = principlesDismissed,
-                onPrinciplesDismissedChange = viewModel::setPrinciplesDismissed,
                 onNext = { goTo(pager.currentPage + 1) },
                 onFinish = { viewModel.complete(onDone) },
                 onAllowNotifications = {
@@ -227,30 +217,30 @@ private fun NotificationSlide() {
 }
 
 /**
- * The way on, which differs per slide: next, next, next-with-the-tick, then allow or
+ * The way on, which differs only on the last slide: next, next, next, then allow or
  * skip. A thin progress bar rather than a row of dots — the tutorial has dots of its
  * own and two sets on one screen say nothing twice.
  */
+// Internal so the screenshot test renders this footer rather than a copy of it: a
+// render of a copy verifies the copy.
 @Composable
-private fun OnboardingFooter(
+internal fun OnboardingFooter(
     page: Int,
     slides: Int,
-    principlesDismissed: Boolean,
-    onPrinciplesDismissedChange: (Boolean) -> Unit,
     onNext: () -> Unit,
     onFinish: () -> Unit,
     onAllowNotifications: () -> Unit,
     lastSlideIsPermission: Boolean,
 ) {
-    val onPrinciples = page == 2
     val onPermission = lastSlideIsPermission && page == 3
 
     Surface(color = MaterialTheme.colorScheme.surface) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // See PrinciplesFooter: a custom bottom bar has to keep itself clear of
-                // the navigation bar, or the only way forward is hidden behind it.
+                // Material's Scaffold pads its own BottomAppBar for the system bars but
+                // not a hand-made one, so without this the button sits underneath the
+                // phone's back/home/recents buttons and cannot be pressed at all.
                 .windowInsetsPadding(
                     WindowInsets.safeDrawing.only(
                         WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
@@ -261,14 +251,10 @@ private fun OnboardingFooter(
             LinearProgressIndicator(
                 progress = { (page + 1f) / slides },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                // Material 3 draws a dot at the end of the track by default. On a deck
+                // of four it reads as a fifth step that never fills.
+                drawStopIndicator = {},
             )
-
-            if (onPrinciples) {
-                PrinciplesTick(
-                    dismissed = principlesDismissed,
-                    onDismissedChange = onPrinciplesDismissedChange,
-                )
-            }
 
             if (onPermission) {
                 Button(onClick = onAllowNotifications, modifier = Modifier.fillMaxWidth()) {

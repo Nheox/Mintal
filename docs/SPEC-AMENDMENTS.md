@@ -203,17 +203,29 @@ One idea per slide, swipeable, with a thin progress bar and a Next button:
 The order is the order the questions arrive in: what is this, what does it do, what will
 it do to me, what does it want. System back steps back a slide rather than leaving.
 
-The principles slide is where the "don't show this again" tick lives, in the footer
-beside Next. The recurring gate afterwards shows the name, the slogan and the three
-promises — not the tutorial, which is a first-run thing.
+The deck is the only time the principles are put in front of anyone. Afterwards they
+live at Settings → *Mintal's principles*, and nothing stands between the launcher and
+the hub.
+
+## §5.4 — The result screen offers two outcomes, not three (amended)
+
+**Save** and **Discard**. "Save and start another" went exactly where "Save" went — the
+hub is where another session starts from — so it was a third button promising a
+difference it did not make, and "Discard changes and go home" said in five words what
+one says.
 
 ## §8 — Edge to edge, and the system bars (clarification)
 
 Mintal draws behind the status and navigation bars. Anything anchored to the bottom of a
-screen keeps itself clear of them: both custom bottom bars pad for
+screen keeps itself clear of them: the first-run footer pads for
 `safeDrawing(Horizontal + Bottom)`, so the background still runs to the edge of the
 display while the controls stay above the phone's back/home/recents buttons. Screens
-without a bottom bar get this from the Scaffold's own content padding.
+without a bottom bar get this from the Scaffold's own content padding. Measured against
+a simulated 132px navigation bar, the clearance is exactly one bar's worth — Material's
+Scaffold does not pad a bottom bar itself, and the padding is therefore applied once.
+
+Progress bars pass `drawStopIndicator = {}`. Material 3 draws a dot at the end of the
+track by default, which on the four-slide deck read as a fifth step that never filled.
 
 ## §4 — The slogan and the tutorial (new)
 
@@ -240,19 +252,16 @@ tutorial cannot drift from what the app actually does. Where the device has anim
 turned off system-wide, the three captions are listed as plain numbered text instead —
 someone who turned animations off has asked not to be shown one.
 
-## §4 — The principles stand at every launch (new)
+## §4 — Where the principles live (replaces the launch gate)
 
-The three claims Mintal makes about itself — it stays on this device, this is what it
-will ask for, this is what happens if you leave mid-session — are shown **before the hub
-at every launch**, not once at first run. They carry a "Don't show this again" tick-box,
-and only that tick retires them.
+The three claims Mintal makes about itself are read once, on the third slide of the
+first-run deck, and kept at Settings → *Mintal's principles* for any time after that.
 
-They remain readable afterwards from Settings → *Mintal's principles*, because a promise
-you can no longer find is not much of a promise. The state is one preference,
-`principlesDismissed`, and it travels in backups like the rest.
-
-Three doors, decided at startup: no onboarding yet → first run; onboarding done but the
-principles not dismissed → the principles, then the hub; otherwise → the hub.
+They were briefly shown before the hub at **every** launch until dismissed, with a
+"don't show this again" tick. In use that was an obstacle between the launcher and the
+timer: a focus app that asks to be read before it will start one is arguing with its own
+purpose. There is now no gate, no tick-box anywhere in the app, and no stored
+`principlesDismissed` state.
 
 ## §4 — Settings: Support Mintal (new)
 

@@ -343,6 +343,7 @@ fun HomeScreen(
                     LinearProgressIndicator(
                         progress = { state.milestoneProgress },
                         modifier = Modifier.fillMaxWidth(),
+                        drawStopIndicator = {},
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
