@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +37,10 @@ import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.ui.components.SectionCard
 import dev.nheox.mintal.ui.permissions.MintalPermission
 import dev.nheox.mintal.ui.permissions.PermissionRationaleBody
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -51,17 +56,29 @@ class OnboardingViewModel @Inject constructor(
     fun setRationaleHidden(permission: MintalPermission, hidden: Boolean) = viewModelScope.launch {
         preferences.setPermissionNoteDismissed(permission.key, hidden)
     }
+
+    val principlesDismissed: StateFlow<Boolean> = preferences.settings
+        .map { it.principlesDismissed }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setPrinciplesDismissed(value: Boolean) = viewModelScope.launch {
+        preferences.setPrinciplesDismissed(value)
+    }
 }
 
 /**
- * First launch only (spec §4). Says plainly what the app asks for, and then — on the
- * second page — says why the one permission it needs is needed, immediately before
- * Android's own prompt appears. An explanation after the fact is no explanation.
+ * First launch (spec §4): the principles, and then — on the second page — why the one
+ * permission Mintal needs is needed, immediately before Android's own prompt appears. An
+ * explanation after the fact is no explanation.
+ *
+ * The principles themselves live in [PrinciplesBody] and are shown at every launch until
+ * dismissed, so this screen is only their first appearance, not their only one.
  */
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
     val viewModel: OnboardingViewModel = hiltViewModel()
     val context = LocalContext.current
+    val principlesDismissed by viewModel.principlesDismissed.collectAsStateWithLifecycle()
     var explainingNotifications by remember { mutableStateOf(false) }
     var hideRationale by remember { mutableStateOf(false) }
 
@@ -117,41 +134,11 @@ fun OnboardingScreen(onDone: () -> Unit) {
             }
 
             Text(text = "Mintal", style = MaterialTheme.typography.displayLarge)
-            Text(
-                text = "Choose how long you want to concentrate. Stay off the phone and the " +
-                    "session is written into the Grove: a bed of real mints that grows with " +
-                    "every block of attention you finish.",
-                style = MaterialTheme.typography.bodyLarge,
+
+            PrinciplesBody(
+                dismissed = principlesDismissed,
+                onDismissedChange = viewModel::setPrinciplesDismissed,
             )
-
-            SectionCard(title = "It stays on this device") {
-                Text(
-                    text = "No account, no server, no analytics, no ads, nothing for sale. " +
-                        "Mintal has no internet permission at all. You can export or delete " +
-                        "everything whenever you want.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            SectionCard(title = "What it will ask for") {
-                Text(
-                    text = "A notification, so the timer can keep running and show the time " +
-                        "left. Nothing else is required, and each permission is explained " +
-                        "before it is requested — in Settings too, whenever you want to " +
-                        "read it again.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            SectionCard(title = "If you leave mid-session") {
-                Text(
-                    text = "You get a 15 second warning first, and the session is only then " +
-                        "recorded as failed — with the time you did manage. A dark screen or " +
-                        "a phone call never counts as leaving. Nothing here takes over your " +
-                        "phone, and you can always exit.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
 
             Button(
                 onClick = {

@@ -167,11 +167,31 @@ the answer is no.
 - **Usage Access** — explained before Settings opens the system screen.
 - **Battery optimisation** — likewise.
 
-Each explanation carries a "don't show this again" box. It suppresses **Mintal's note**
-only: Android's own prompt is the system's and always appears, and every explanation stays
+Each explanation carries its own "don't show this again" box — separate from the
+principles one above, and about that permission's note alone. It suppresses **Mintal's
+note** only: Android's own prompt is the system's and always appears, and every explanation stays
 readable in Settings → Permissions, which also states that Mintal has no internet
 permission. The suppressed set is stored as `dismissedPermissionNotes` and travels in
 backups.
+
+Settings lists each permission exactly once. Battery optimisation used to appear both
+under *Device* ("Ask Android not to kill running sessions") and under *Permissions*
+("Not being killed mid-session") — two names for one system screen — so the *Device* card
+is gone and its action lives with the other permissions.
+
+## §4 — The principles stand at every launch (new)
+
+The three claims Mintal makes about itself — it stays on this device, this is what it
+will ask for, this is what happens if you leave mid-session — are shown **before the hub
+at every launch**, not once at first run. They carry a "Don't show this again" tick-box,
+and only that tick retires them.
+
+They remain readable afterwards from Settings → *Mintal's principles*, because a promise
+you can no longer find is not much of a promise. The state is one preference,
+`principlesDismissed`, and it travels in backups like the rest.
+
+Three doors, decided at startup: no onboarding yet → first run; onboarding done but the
+principles not dismissed → the principles, then the hub; otherwise → the hub.
 
 ## §4 — Settings: Support Mintal (new)
 

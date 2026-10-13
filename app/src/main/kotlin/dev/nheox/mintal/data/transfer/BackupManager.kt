@@ -222,6 +222,7 @@ class BackupManager @Inject constructor(
         .put("detectLeavingApp", detectLeavingApp)
         .put("detectForegroundApp", detectForegroundApp)
         .put("onboardingComplete", onboardingComplete)
+        .put("principlesDismissed", principlesDismissed)
         .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
         .put("dismissedPermissionNotes", JSONArray(dismissedPermissionNotes.toList()))
@@ -241,6 +242,7 @@ class BackupManager @Inject constructor(
             detectLeavingApp = optBoolean("detectLeavingApp", defaults.detectLeavingApp),
             detectForegroundApp = optBoolean("detectForegroundApp", defaults.detectForegroundApp),
             onboardingComplete = optBoolean("onboardingComplete", defaults.onboardingComplete),
+            principlesDismissed = optBoolean("principlesDismissed", defaults.principlesDismissed),
             starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }
                 .getOrDefault(defaults.theme),

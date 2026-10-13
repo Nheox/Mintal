@@ -61,10 +61,12 @@ fun MintalRoot() {
                 MintalSplash()
             } else {
                 MintalNavHost(
-                    startDestination = if (current.onboardingComplete) {
-                        Routes.HOME
-                    } else {
-                        Routes.ONBOARDING
+                    startDestination = when {
+                        !current.onboardingComplete -> Routes.ONBOARDING
+                        // The principles stand in front of the hub until the reader says
+                        // they have read them (spec §4, amended).
+                        !current.principlesDismissed -> Routes.PRINCIPLES_GATE
+                        else -> Routes.HOME
                     },
                 )
             }

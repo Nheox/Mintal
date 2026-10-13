@@ -35,6 +35,8 @@ been exercised by reading the code.
 | One plant grows forever | Fixed — a plant matures at twelve nodes and the next session starts another beside it. |
 | Grove art wrong against the reference | Rewritten — see `docs/SPEC-AMENDMENTS.md` §8.3 for the corrected table. |
 | Leaves grow singly | Fixed — one session is one node: a stem segment and an opposite pair, decussate, with branches from leaf axils. |
+| "Don't show again" belongs on the principles, not the permissions | Fixed — the principles now stand in front of the hub at every launch until dismissed, and stay readable at Settings → Mintal's principles. The permission notes keep their own, separate tick. |
+| Mid-session kill listed twice in Settings | Fixed — the *Device* card is gone; battery optimisation lives with the other permissions, once. |
 
 ## Needs the owner before release
 
@@ -58,10 +60,11 @@ been exercised by reading the code.
 
 ## Next, in the order worth doing it
 
-1. Install this build and exercise the three new flows: arm a session and cancel it; arm
-   one and let it run; refuse the notification permission and check a session still runs;
+1. Install this build and exercise the new flows: arm a session and cancel it; arm one
+   and let it run; refuse the notification permission and check a session still runs;
    reach a milestone and pick a mint; fill a plant to twelve nodes and watch the next
-   session start a new one.
+   session start a new one; relaunch twice to see the principles return, then tick the
+   box and confirm they stop and are still in Settings.
 2. Fill in the donation URL.
 3. UI strings into `strings.xml`, then the Spanish translation.
 4. Accessibility pass: TalkBack labels on hub tiles, chips and the mint chooser, contrast

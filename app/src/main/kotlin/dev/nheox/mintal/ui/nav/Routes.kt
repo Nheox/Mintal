@@ -3,6 +3,15 @@ package dev.nheox.mintal.ui.nav
 /** The screen map of spec §4, as navigation routes. */
 object Routes {
     const val ONBOARDING = "onboarding"
+
+    /**
+     * The principles, in two places: as the gate before the hub at every launch until
+     * they are dismissed, and as a page reached from Settings afterwards. Two routes for
+     * one screen, because what "done" means differs — the gate goes on into the app, the
+     * Settings copy goes back where it came from.
+     */
+    const val PRINCIPLES_GATE = "principles_gate"
+    const val PRINCIPLES = "principles"
     const val HOME = "home"
     const val RUNNING = "running"
     const val GROVE = "grove"

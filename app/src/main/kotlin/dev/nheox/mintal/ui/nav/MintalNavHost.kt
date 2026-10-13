@@ -11,6 +11,7 @@ import dev.nheox.mintal.ui.grove.GroveScreen
 import dev.nheox.mintal.ui.grove.SessionDetailScreen
 import dev.nheox.mintal.ui.home.HomeScreen
 import dev.nheox.mintal.ui.onboarding.OnboardingScreen
+import dev.nheox.mintal.ui.onboarding.PrinciplesScreen
 import dev.nheox.mintal.ui.session.SessionResultScreen
 import dev.nheox.mintal.ui.session.SessionRunningScreen
 import dev.nheox.mintal.ui.settings.AboutScreen
@@ -36,6 +37,20 @@ fun MintalNavHost(startDestination: String) {
                     }
                 },
             )
+        }
+
+        composable(Routes.PRINCIPLES_GATE) {
+            PrinciplesScreen(
+                onContinue = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.PRINCIPLES_GATE) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(Routes.PRINCIPLES) {
+            PrinciplesScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.UNLOCK) {
@@ -155,6 +170,7 @@ fun MintalNavHost(startDestination: String) {
                 onBack = { navController.popBackStack() },
                 onOpenAllowlist = { navController.navigate(Routes.ALLOWLIST) },
                 onOpenAbout = { navController.navigate(Routes.ABOUT) },
+                onOpenPrinciples = { navController.navigate(Routes.PRINCIPLES) },
             )
         }
 

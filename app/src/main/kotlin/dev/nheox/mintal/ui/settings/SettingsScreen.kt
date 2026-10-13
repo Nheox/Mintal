@@ -50,6 +50,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAllowlist: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenPrinciples: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = hiltViewModel()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -227,35 +228,17 @@ fun SettingsScreen(
                 )
             }
 
-            SectionCard(title = "Device") {
-                OutlinedButton(
-                    onClick = {
-                        if (MintalPermission.BATTERY.key in settings.dismissedPermissionNotes) {
-                            runCatching {
-                                context.startActivity(viewModel.batteryOptimisationIntent())
-                            }
-                        } else {
-                            explaining = MintalPermission.BATTERY
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Ask Android not to kill running sessions") }
-                Text(
-                    text = "Some phones stop background timers aggressively. This is optional " +
-                        "and only ever opened by you.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
+            // One card, not two: battery optimisation used to live under "Device" as
+            // well, so "don't get killed mid-session" appeared twice with two different
+            // names for the same system screen.
             SectionCard(title = "Permissions") {
                 Text(
                     text = "Mintal asks for four install-time permissions it cannot run " +
                         "without — a foreground service, a wake lock, a notification and " +
                         "vibration — and nothing else unless you turn it on. There is no " +
                         "internet permission. Each explanation below is the one shown " +
-                        "before the request, and stays here even if you dismissed it.",
+                        "before the request, and stays here even if you dismissed it; " +
+                        "opening one is also how to grant or revoke it.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 MintalPermission.entries.forEach { permission ->
@@ -264,6 +247,10 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text(permission.title) }
                 }
+            }
+
+            OutlinedButton(onClick = onOpenPrinciples, modifier = Modifier.fillMaxWidth()) {
+                Text("Mintal's principles")
             }
 
             SectionCard(title = "Support Mintal") {
