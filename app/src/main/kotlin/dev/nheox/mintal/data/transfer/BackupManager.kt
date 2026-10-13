@@ -99,6 +99,10 @@ class BackupManager @Inject constructor(
             allowlistRepository.replaceAll(allowed)
             root.optJSONObject("preferences")?.let { preferences.replaceAll(it.toSettings()) }
 
+            // Unlock state is derived, so a restore recomputes it rather than trusting the
+            // stamps in the file (spec §7).
+            speciesRepository.refreshUnlocks(System.currentTimeMillis())
+
             sessions.size
         }
     }
@@ -106,6 +110,9 @@ class BackupManager @Inject constructor(
     suspend fun clearAllData() {
         sessionRepository.deleteAll()
         speciesRepository.replaceAll(emptyList())
+        // Back to the starting state: the one mint that needs no focus at all is unlocked
+        // again immediately, rather than at the next app start.
+        speciesRepository.refreshUnlocks(System.currentTimeMillis())
     }
 
     private fun write(target: Uri, text: String) {
@@ -205,6 +212,7 @@ class BackupManager @Inject constructor(
         .put("detectLeavingApp", detectLeavingApp)
         .put("detectForegroundApp", detectForegroundApp)
         .put("onboardingComplete", onboardingComplete)
+        .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
 
     private fun JSONObject.toSettings(): MintalSettings {
@@ -222,6 +230,7 @@ class BackupManager @Inject constructor(
             detectLeavingApp = optBoolean("detectLeavingApp", defaults.detectLeavingApp),
             detectForegroundApp = optBoolean("detectForegroundApp", defaults.detectForegroundApp),
             onboardingComplete = optBoolean("onboardingComplete", defaults.onboardingComplete),
+            starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }
                 .getOrDefault(defaults.theme),
         )

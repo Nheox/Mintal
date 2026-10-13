@@ -15,6 +15,7 @@ import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.data.repository.SessionRepository
 import dev.nheox.mintal.data.repository.SpeciesRepository
 import dev.nheox.mintal.data.repository.TagRepository
+import dev.nheox.mintal.di.ApplicationScope
 import dev.nheox.mintal.domain.milestone.MilestoneEngine
 import dev.nheox.mintal.domain.session.RunningSession
 import dev.nheox.mintal.domain.session.SessionController
@@ -22,6 +23,7 @@ import dev.nheox.mintal.domain.session.SessionResult
 import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.service.FocusSessionService
 import dev.nheox.mintal.ui.nav.Routes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -169,6 +171,7 @@ class SessionResultViewModel @Inject constructor(
     private val speciesRepository: SpeciesRepository,
     private val tagRepository: TagRepository,
     private val controller: SessionController,
+    @ApplicationScope private val applicationScope: CoroutineScope,
 ) : ViewModel() {
 
     private val sessionId: Long = savedStateHandle.get<Long>(Routes.ARG_SESSION_ID) ?: -1L
@@ -208,16 +211,19 @@ class SessionResultViewModel @Inject constructor(
         edits.value = current.rating to note.take(SessionRules.NOTE_MAX_LENGTH)
     }
 
-    /** Rating and note are offered even on a failed session (spec §5.4). */
-    fun save() = viewModelScope.launch {
+    /**
+     * Rating and note are offered even on a failed session (spec §5.4). The write runs on
+     * the application scope because the caller navigates away in the same breath, which
+     * cancels this ViewModel's own scope.
+     */
+    fun save() {
         val current = state.value
-        val session = current.session ?: return@launch
-        sessionRepository.update(
-            session.copy(
-                rating = current.rating,
-                note = current.note.trim().ifEmpty { null },
-            ),
-        )
+        val session = current.session ?: return
+        val rating = current.rating
+        val note = current.note.trim().ifEmpty { null }
+        applicationScope.launch {
+            sessionRepository.update(session.copy(rating = rating, note = note))
+        }
         controller.clearResult()
     }
 

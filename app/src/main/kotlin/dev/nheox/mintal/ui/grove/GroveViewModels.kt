@@ -18,7 +18,9 @@ import dev.nheox.mintal.domain.grove.GroveDayAnchor
 import dev.nheox.mintal.domain.grove.GroveLayout
 import dev.nheox.mintal.domain.grove.GroveLayoutBuilder
 import dev.nheox.mintal.domain.session.SessionRules
+import dev.nheox.mintal.di.ApplicationScope
 import dev.nheox.mintal.ui.nav.Routes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -134,6 +136,7 @@ class SessionDetailViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val speciesRepository: SpeciesRepository,
     tagRepository: TagRepository,
+    @ApplicationScope private val applicationScope: CoroutineScope,
 ) : ViewModel() {
 
     private val sessionId: Long = savedStateHandle.get<Long>(Routes.ARG_SESSION_ID) ?: -1L
@@ -159,12 +162,14 @@ class SessionDetailViewModel @Inject constructor(
 
     fun setTag(tagId: Long?) = update { it.copy(tagId = tagId) }
 
-    fun delete(onDeleted: () -> Unit) = viewModelScope.launch {
-        state.value.session?.let { sessionRepository.delete(it) }
+    fun delete(onDeleted: () -> Unit) {
+        val session = state.value.session
+        applicationScope.launch { session?.let { sessionRepository.delete(it) } }
         onDeleted()
     }
 
-    private fun update(transform: (SessionEntity) -> SessionEntity) = viewModelScope.launch {
+    /** Edits outlive this screen: the user may well change a note and immediately leave. */
+    private fun update(transform: (SessionEntity) -> SessionEntity) = applicationScope.launch {
         val current = sessionRepository.getById(sessionId) ?: return@launch
         sessionRepository.update(transform(current))
     }

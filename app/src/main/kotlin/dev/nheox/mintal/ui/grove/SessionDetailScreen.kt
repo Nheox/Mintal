@@ -48,6 +48,10 @@ fun SessionDetailScreen(onBack: () -> Unit) {
             EmptyState(message = "This session is no longer here.", modifier = Modifier.padding(padding))
             return@Scaffold
         }
+        // The note field edits a local draft and writes through, so the round trip to the
+        // database cannot move the cursor while someone is typing.
+        var noteDraft by remember(session.id) { mutableStateOf(session.note ?: "") }
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -97,11 +101,14 @@ fun SessionDetailScreen(onBack: () -> Unit) {
             }
 
             OutlinedTextField(
-                value = session.note ?: "",
-                onValueChange = viewModel::setNote,
+                value = noteDraft,
+                onValueChange = { typed ->
+                    noteDraft = typed.take(SessionRules.NOTE_MAX_LENGTH)
+                    viewModel.setNote(noteDraft)
+                },
                 label = { Text("Note") },
                 supportingText = {
-                    Text("${(session.note ?: "").length}/${SessionRules.NOTE_MAX_LENGTH}")
+                    Text("${noteDraft.length}/${SessionRules.NOTE_MAX_LENGTH}")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,

@@ -53,7 +53,7 @@ fun GroveCanvas(
                     append(layout.segments.size)
                     append(" sessions across ")
                     append(layout.anchors.size)
-                    append(" days. Double tap a day's growth to open it.")
+                    append(" days. Tap a day's growth to open it.")
                 }
             }
             .pointerInput(Unit) {
