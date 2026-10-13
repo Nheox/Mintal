@@ -53,7 +53,7 @@ class MilestoneEngineTest {
     @Test
     fun `newly unlocked only reports what has not been stamped`() {
         val newly = MilestoneEngine.newlyUnlocked(
-            catalogue = catalogue,
+            catalog = catalogue,
             alreadyStamped = setOf("spicata"),
             totalSuccessfulSeconds = 120 * 60,
         )

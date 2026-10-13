@@ -34,14 +34,10 @@ jobs:
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Unit tests
-        run: ./gradlew --no-daemon test
-
-      - name: Assemble debug APK
-        run: ./gradlew --no-daemon assembleDebug
-
-      - name: Assemble release APK (unsigned, as F-Droid would build it)
-        run: ./gradlew --no-daemon assembleRelease
+      # One invocation: three separate ones re-fork the JVM and re-run configuration.
+      # assembleRelease is what F-Droid's own build server would run.
+      - name: Unit tests and both APKs
+        run: ./gradlew test assembleDebug assembleRelease
 
       - name: Upload APKs
         if: success()
