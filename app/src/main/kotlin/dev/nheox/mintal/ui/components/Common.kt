@@ -41,22 +41,27 @@ fun MintalTopBar(
     )
 }
 
-/** One grouped block of content, used by every list-shaped screen. */
+/**
+ * One grouped block of content, used by every list-shaped screen. Pass [onClick] for a
+ * box that is itself a button: a tappable card hand-rolled beside these ones comes out
+ * with its own padding and no edge, which is exactly how the hub ended up with two boxes
+ * visibly tighter than the rest.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SectionCard(
     title: String? = null,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-        // An edge, not just a fill: in light mode a card and the page behind it are close
-        // enough in tone that the box itself has to be drawn.
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
+    val colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+    )
+    // An edge, not just a fill: in light mode a card and the page behind it are close
+    // enough in tone that the box itself has to be drawn.
+    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val body: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(16.dp)) {
             if (title != null) {
                 Text(
@@ -68,6 +73,17 @@ fun SectionCard(
             }
             content()
         }
+    }
+
+    if (onClick == null) {
+        Card(modifier = modifier.fillMaxWidth(), colors = colors, border = border) { body() }
+    } else {
+        Card(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            colors = colors,
+            border = border,
+        ) { body() }
     }
 }
 

@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,6 +9,25 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.hilt)
 }
+
+/**
+ * Release signing for the APKs this project publishes itself — a GitHub release, a build
+ * handed to a tester. F-Droid never uses it: F-Droid builds from source and signs with
+ * its own key, which is the whole point of the store.
+ *
+ * The values come from a gitignored `keystore.properties` at the repository root, or
+ * from the matching environment variables for CI. When neither is present the release
+ * build is left unsigned rather than failing, because `assembleRelease` has to keep
+ * working for CI, for F-Droid and for anyone who just cloned the repository.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+
+fun signingSecret(property: String, environment: String): String? =
+    (keystoreProperties.getProperty(property) ?: System.getenv(environment))
+        ?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "dev.nheox.mintal"
@@ -21,10 +41,27 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        val storePath = signingSecret("storeFile", "MINTAL_KEYSTORE_FILE")
+        val storePassword = signingSecret("storePassword", "MINTAL_KEYSTORE_PASSWORD")
+        val keyAlias = signingSecret("keyAlias", "MINTAL_KEY_ALIAS")
+        val keyPassword = signingSecret("keyPassword", "MINTAL_KEY_PASSWORD")
+        if (storePath != null && storePassword != null && keyAlias != null && keyPassword != null) {
+            create("release") {
+                this.storeFile = rootProject.file(storePath)
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
+            // Null when no keystore was configured, which leaves the APK unsigned.
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

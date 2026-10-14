@@ -41,6 +41,24 @@ Nextcloud, a local folder — whatever is already installed). Mintal holds no cr
 talks to no sync API, and runs no backend. One-way backup to storage you already own is
 not two-way sync, which stays out of scope.
 
+### The permissions it does ask for
+
+Five install-time permissions, all of them implied by "a timer that keeps running": two
+for the foreground service, a wake lock, a notification and vibration.
+
+Three further things are **special access**, off by default, each explained in Mintal's
+own words before the system is ever asked, and none of them a precondition for a session:
+
+- **Usage Access**, so an allowlisted app — a dictionary, a calculator — can be told from
+  a distraction instead of failing your session. Mintal reads only which app is in front.
+- **Display over other apps**, for the optional floating bubble that carries the time left
+  and the 15-second warning over whatever you are using. The bubble shows the clock; it
+  cannot read what is underneath it.
+- **Ignoring battery optimisation**, requested by you, from Settings, on phones that stop
+  background timers regardless of the notification.
+
+Refuse all three and every other part of the app behaves exactly as before.
+
 ## State of the project
 
 Early. The v1 feature set is implemented — countdown and count-up sessions, the Grove,

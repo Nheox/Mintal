@@ -212,6 +212,7 @@ class BackupManager @Inject constructor(
         .put("vibrateOnFinish", vibrateOnFinish)
         .put("detectLeavingApp", detectLeavingApp)
         .put("detectForegroundApp", detectForegroundApp)
+        .put("showOverlay", showOverlay)
         .put("onboardingComplete", onboardingComplete)
         .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
@@ -230,6 +231,7 @@ class BackupManager @Inject constructor(
             vibrateOnFinish = optBoolean("vibrateOnFinish", defaults.vibrateOnFinish),
             detectLeavingApp = optBoolean("detectLeavingApp", defaults.detectLeavingApp),
             detectForegroundApp = optBoolean("detectForegroundApp", defaults.detectForegroundApp),
+            showOverlay = optBoolean("showOverlay", defaults.showOverlay),
             onboardingComplete = optBoolean("onboardingComplete", defaults.onboardingComplete),
             starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }

@@ -53,7 +53,16 @@ import dev.nheox.mintal.ui.theme.mintalPalette
  * which also means it can never drift from what the app actually does.
  */
 private const val BEATS = 3
-private const val BEAT_MILLIS = 2_600
+
+/**
+ * How long one beat is on screen. Each beat animates over the first three quarters of
+ * this and then holds, so the caption is still for the last second and a bit.
+ *
+ * It was 2.6 seconds, and at that speed the first readers of the deck reported that the
+ * steps went by before they had finished the sentence — two lines of new vocabulary
+ * ("session", "the Grove") against a moving drawing is not a two-second read.
+ */
+private const val BEAT_MILLIS = 5_200
 
 private data class Beat(val instruction: String, val detail: String)
 

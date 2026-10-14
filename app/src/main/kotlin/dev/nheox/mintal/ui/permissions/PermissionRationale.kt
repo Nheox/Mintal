@@ -51,6 +51,19 @@ enum class MintalPermission(
             "opened. Every other part of the app is unaffected.",
         grantLabel = "Open Usage Access settings",
     ),
+    OVERLAY(
+        key = "overlay",
+        title = "Floating the timer over other apps",
+        why = "Optional, and off unless you turn it on. Android calls this \"display over " +
+            "other apps\". With it, Mintal can put a small bubble with the time left on " +
+            "top of whatever you are using — and, more to the point, the fifteen second " +
+            "warning, which is otherwise behind a swipe at the one moment it matters. " +
+            "The bubble shows the clock and nothing else; it cannot read the app " +
+            "underneath it.",
+        withoutIt = "The session time lives in the notification only. Nothing else " +
+            "changes, and no session behaves differently.",
+        grantLabel = "Open the system setting",
+    ),
     BATTERY(
         key = "battery",
         title = "Not being killed mid-session",

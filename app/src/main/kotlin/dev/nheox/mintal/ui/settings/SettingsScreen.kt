@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.data.prefs.ThemeChoice
+import dev.nheox.mintal.service.OverlayAccess
 import dev.nheox.mintal.service.UsageAccess
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
@@ -103,6 +104,21 @@ fun SettingsScreen(
                     checked = settings.vibrateOnFinish,
                     onCheckedChange = viewModel::setVibrate,
                 )
+                SettingSwitch(
+                    label = "Float the timer over other apps",
+                    description = "Optional. A small bubble carrying the time left, on " +
+                        "top of whatever app is in front — and the 15 second warning, " +
+                        "which is otherwise behind a swipe at the one moment it counts. " +
+                        "Drag it anywhere, tap it to come straight back.",
+                    checked = settings.showOverlay,
+                    onCheckedChange = viewModel::setShowOverlay,
+                )
+                if (settings.showOverlay && !OverlayAccess.isGranted(context)) {
+                    OutlinedButton(
+                        onClick = { explaining = MintalPermission.OVERLAY },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) { Text("Allow it in system settings") }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -227,12 +243,12 @@ fun SettingsScreen(
             // names for the same system screen.
             SectionCard(title = "Permissions") {
                 Text(
-                    text = "Mintal asks for four install-time permissions it cannot run " +
-                        "without — a foreground service, a wake lock, a notification and " +
-                        "vibration — and nothing else unless you turn it on. There is no " +
-                        "internet permission. Each explanation below is the one shown " +
-                        "before the request; opening one is also how to grant or " +
-                        "revoke it.",
+                    text = "Mintal asks for five install-time permissions it cannot run " +
+                        "without — two for the foreground service, a wake lock, a " +
+                        "notification and vibration — and nothing else unless you turn " +
+                        "it on. There is no internet permission. Each explanation below " +
+                        "is the one shown before the request; opening one is also how to " +
+                        "grant or revoke it.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 MintalPermission.entries.forEach { permission ->
@@ -286,6 +302,7 @@ fun SettingsScreen(
                 val intent = when (permission) {
                     MintalPermission.NOTIFICATIONS -> viewModel.notificationSettingsIntent()
                     MintalPermission.USAGE_ACCESS -> UsageAccess.settingsIntent()
+                    MintalPermission.OVERLAY -> OverlayAccess.settingsIntent(context)
                     MintalPermission.BATTERY -> viewModel.batteryOptimisationIntent()
                 }
                 runCatching { context.startActivity(intent) }

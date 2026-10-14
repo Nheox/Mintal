@@ -25,8 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -279,19 +277,17 @@ fun HomeScreen(
                 }
             }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                onClick = onOpenSpecies,
-            ) {
+            // Both of these are SectionCards rather than bare Cards so they keep the
+            // same inset and the same drawn edge as every other box on the page. Built
+            // by hand they had 14dp and no border, and sat visibly tighter than their
+            // neighbours.
+            SectionCard(title = "Mint", onClick = onOpenSpecies) {
                 Row(
-                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    state.species?.let { species ->
+                    val species = state.species
+                    if (species != null) {
                         SpeciesEmblem(species = species, size = 44.dp)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -304,29 +300,25 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                    } else {
+                        Text(
+                            text = "No mint chosen yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                     Text(text = "Change", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                onClick = { showTagPicker = true },
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Tag", style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            text = state.tag?.name ?: "No tag",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
+            SectionCard(title = "Tag", onClick = { showTagPicker = true }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.tag?.name ?: "No tag",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
                     Text(text = "Change", style = MaterialTheme.typography.labelLarge)
                 }
             }

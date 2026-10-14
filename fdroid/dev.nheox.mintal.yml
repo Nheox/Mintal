@@ -1,0 +1,49 @@
+#
+# The F-Droid build recipe for Mintal.
+#
+# This file does not do anything inside this repository. It is the file that has to be
+# added to F-Droid's own metadata repository, as
+#
+#     metadata/dev.nheox.mintal.yml
+#
+# in a merge request against https://gitlab.com/fdroid/fdroiddata. It is kept here so it
+# is version-controlled with the app it describes, and so the version numbers at the
+# bottom can be updated in the same commit that bumps them in app/build.gradle.kts.
+#
+# Lines marked TODO still need a real value. See docs/FDROID.md.
+#
+Categories:
+  - Time
+
+License: GPL-3.0-only
+
+AuthorName: TODO
+AuthorEmail: TODO
+
+SourceCode: https://github.com/Nheox/Mintal
+IssueTracker: https://github.com/Nheox/Mintal/issues
+Changelog: https://github.com/Nheox/Mintal/releases
+
+# One of Donate / Liberapay / OpenCollective, matching whatever ui/settings/Donation.kt
+# points at. Delete the ones that do not apply.
+Donate: TODO
+
+RepoType: git
+Repo: https://github.com/Nheox/Mintal.git
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: v0.1.0
+    subdir: app
+    gradle:
+      - yes
+
+# Mintal ships nothing proprietary, downloads nothing at build or run time and declares
+# no INTERNET permission, so there is no anti-feature to declare and nothing to strip in
+# a prebuild step.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

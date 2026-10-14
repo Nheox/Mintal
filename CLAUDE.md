@@ -66,9 +66,11 @@ export ANDROID_HOME=/opt/android-sdk
 ```
 
 The screenshot tests are the only way to see the UI here, and they are worth running on
-any art or chart change: `species-sheet-*` (all twelve mints), `grove-bed-*` (a mixed
-bed), `grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `charts-focus-*` and
-`charts-rating-*` (the statistics axes at the sizes that broke them).
+any art or chart change: `species-sheet-*` (all twelve mints), `species-card-*` and
+`species-list-light` (the two layouts of the catalogue), `grove-bed-*` (a mixed bed),
+`grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `section-cards-*` (plain and
+tappable boxes on the same edges), and `charts-focus-*` and `charts-rating-*` (the
+statistics axes at the sizes that broke them).
 
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
@@ -96,6 +98,11 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 
 - `SessionController` is the heart: a state machine over a `SessionStore` interface and an
   injected clock, so it is fully unit-testable. Keep it that way.
+- `SessionOverlay` is the floating bubble, and it is plain Android views on purpose: a
+  `ComposeView` in a `WindowManager` window needs a lifecycle owner, a saved-state registry
+  and a view-model store supplied by hand before it draws anything, and the screenshot
+  renderer cannot reach it either way. The service drives it from the same `appInForeground`
+  signal the distraction detector uses.
 - The Grove is a *rendering*, not a table: `GroveLayoutBuilder` turns the session list into
   a bed of plants deterministically, seeded by session id, so it never reshuffles between
   launches. One successful session is one **node** (stem segment + opposite leaf pair) on
@@ -115,8 +122,10 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   offline from source and it would break.
 - No Google Play Services, no vendor SDKs, no analytics, no crash reporting, no IAP.
 - Every dependency OSI-licensed, resolvable from Maven Central or Google's Maven.
-- Permissions are a design constraint, not an implementation detail: four unavoidable ones,
-  one optional special access. Adding one needs a conversation.
+- Permissions are a design constraint, not an implementation detail: five unavoidable ones,
+  three optional special accesses (Usage Access, display over other apps, ignoring battery
+  optimisation). Adding one needs a conversation — the overlay had one, in the third round
+  of device feedback, and is off by default like the others.
 
 ## Gotchas already paid for
 
@@ -156,6 +165,11 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   The first-run footer was duplicated in `PrinciplesScreenshotTest`, so a render "proving"
   the inset fix was a render of a copy that never had it. Make the real composable
   `internal` and call it.
+- A tappable box hand-rolled beside `SectionCard` comes out with its own padding and no
+  border, and 2dp of difference is invisible in review and obvious on a phone — that is how
+  the hub's Mint and Tag boxes ended up visibly tighter than their neighbours. `SectionCard`
+  takes an `onClick`; use it rather than a bare `Card`. `SectionCardScreenshotTest` stacks
+  both kinds so the next one cannot drift.
 
 ## Conventions
 
@@ -163,7 +177,12 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - Comments explain *why*, never *what*. No comment is better than a restated line.
 - `domain/` stays free of Android framework imports.
 - UI strings are currently hardcoded in Compose. Moving them to `strings.xml` is the
-  prerequisite for the Spanish translation the owner wants.
+  prerequisite for the Spanish translation the owner wants. The exceptions are the few the
+  framework needs as resources: the notification channel and the overlay bubble.
+- F-Droid submission material lives in `fastlane/metadata/` (what the store page shows) and
+  `fdroid/dev.nheox.mintal.yml` (the build recipe, destined for a merge request against
+  fdroiddata). `docs/FDROID.md` is the checklist and says what is still blocked on the
+  owner.
 
 ## Current state and next steps
 
