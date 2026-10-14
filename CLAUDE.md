@@ -119,11 +119,6 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - Every dependency OSI-licensed, resolvable from Maven Central or Google's Maven.
 - Permissions are a design constraint, not an implementation detail: four unavoidable ones,
   one optional special access. Adding one needs a conversation.
-- A floating overlay over other apps was built and then removed, on purpose. It wanted
-  `SYSTEM_ALERT_WINDOW` — the permission overlay malware uses — in an app whose README
-  promises minimum permissions, and it only earned that in the fifteen seconds of the
-  grace period, which a high-importance notification channel can cover for free. If it is
-  ever asked for again, that is the cheaper answer to reach for first.
 
 ## Gotchas already paid for
 
@@ -176,10 +171,6 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - `domain/` stays free of Android framework imports.
 - UI strings are currently hardcoded in Compose. Moving them to `strings.xml` is the
   prerequisite for the Spanish translation the owner wants.
-- F-Droid submission material lives in `fastlane/metadata/` (what the store page shows) and
-  `fdroid/dev.nheox.mintal.yml` (the build recipe, destined for a merge request against
-  fdroiddata). `docs/FDROID.md` is the checklist and says what is still blocked on the
-  owner.
 
 ## Current state and next steps
 

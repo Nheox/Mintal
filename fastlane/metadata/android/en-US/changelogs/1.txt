@@ -1,5 +1,0 @@
-First release.
-
-Countdown and count-up focus sessions, the Grove, twelve species of Mentha on cumulative
-time milestones, tags, ratings and notes, statistics, CSV export and JSON backup. No
-internet permission, no accounts, nothing for sale.

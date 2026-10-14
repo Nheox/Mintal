@@ -17,17 +17,7 @@ import androidx.core.net.toUri
  */
 object Donation {
 
-    /**
-     * The whole address, as the browser should receive it. One of:
-     *
-     * - PayPal.me — `https://www.paypal.com/paypalme/<handle>`
-     * - Ko-fi — `https://ko-fi.com/<handle>`
-     * - Liberapay — `https://liberapay.com/<handle>`
-     * - GitHub Sponsors — `https://github.com/sponsors/<handle>`
-     *
-     * Whatever goes here also goes in the `Donate:` line of `fdroid/dev.nheox.mintal.yml`.
-     * See `docs/FDROID.md`.
-     */
+    /** A PayPal.me link, e.g. "https://www.paypal.com/paypalme/<handle>". */
     val URL: String = ""
 
     val isConfigured: Boolean get() = URL.isNotBlank()

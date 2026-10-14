@@ -14,8 +14,6 @@ captures/
 *.dex
 *.class
 *.keystore
-*.jks
-keystore.properties
 !debug.keystore
 release/
 .kotlin/

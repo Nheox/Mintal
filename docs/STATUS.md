@@ -50,32 +50,35 @@ been exercised by reading the code.
 
 ## From the third device session
 
+Two changes, deliberately. Three other things were asked for, discussed, and dropped —
+see "Decided against", below.
+
 | Reported | Status |
 |---|---|
-| The Tags and Change-mint boxes have no margins | Fixed — both were hand-rolled `Card`s with 14dp and no border beside everyone else's `SectionCard`. `SectionCard` now takes an `onClick`, and `SectionCardScreenshotTest` stacks a plain and a tappable box so the next one cannot drift. |
-| No overlay while another app is in front | Built, then removed at the owner's decision. It wanted `SYSTEM_ALERT_WINDOW` in an app that promises minimum permissions, and only earned it during the 15 second grace period — which a high-importance notification channel can cover with no permission at all. That channel is the open follow-up. |
-| The tutorial steps go by too fast to read | Left at 2.6 s for now. More seconds treats the symptom; the real fix is letting the reader advance or pause the beats, and that is worth doing only once someone has watched it on a device. |
-| The species list wants a single-entry card view | Added — a List/Cards toggle in the top bar, and tapping a row opens that mint's card. One mint per page, swiped horizontally: the plant at 220dp, the catalogue note, the field marks read back out of the drawing parameters, and its lock or selection state. |
-| Donation button and F-Droid | Prepared as far as it can be without the owner — see `docs/FDROID.md`, and the list below. |
+| The Tag and Change-mint boxes have no margins | Fixed — both were hand-rolled `Card`s with 14dp and no border beside everyone else's `SectionCard`. `SectionCard` now takes an `onClick`, and `SectionCardScreenshotTest` stacks a plain and a tappable box so the next one cannot drift. |
+| The species list wants a single-entry card view | Added — a List/Cards toggle in the top bar, and tapping a row opens that mint's card. One mint per page, swiped horizontally: the plant at 220dp, the catalogue note, the field marks read back out of the same drawing parameters the art uses, and its lock or selection state. |
+
+## Decided against
+
+Recorded because each was built or half-built and then removed on purpose, and the next
+session should not quietly re-propose them.
+
+- **A floating overlay over other apps.** It wanted `SYSTEM_ALERT_WINDOW` — the permission
+  overlay malware uses — in an app whose README promises minimum permissions, and it only
+  earned that during the fifteen seconds of the grace period. Built, reviewed, removed.
+- **Slowing the first-run tutorial.** A beat went from 2.6 s to 5.2 s and back. More
+  seconds treats the symptom; if it still reads too fast on a device, the fix is letting
+  the reader advance or pause the beats.
+- **F-Droid submission material.** Store metadata, a build recipe and release signing were
+  prepared and then removed: the owner is not submitting yet, and scaffolding that sits
+  unused for months goes stale and gets submitted stale. Worth redoing when the app is
+  actually ready to go out, against whatever F-Droid's requirements are then.
 
 ## Needs the owner before release
 
-- **The donation address.** Deliberately still empty, and the Settings card says so in
-  the build. An app with no users earns no donations, and registering a payment identity
-  before anyone has installed it is a commitment with nothing on the other side.
-  `docs/FDROID.md` lists the platforms for when that changes; `ui/settings/Donation.URL`
-  is the one line, and no other code knows the URL.
-- **A public repository.** `Nheox/Mintal` is private, and F-Droid's build server clones
-  the source and builds it on their machine. Nothing else about the submission matters
-  until that changes.
-- **`AuthorName`, `AuthorEmail`, and the licence wording.** Three `TODO` lines in
-  `fdroid/dev.nheox.mintal.yml`, plus a decision on `GPL-3.0-only` versus
-  `GPL-3.0-or-later` — the README says "GPL-3.0" with no "or later" notice, so the recipe
-  currently says `-only`.
-- **Store screenshots from a real phone.** Up to eight, into
-  `fastlane/metadata/android/en-US/images/phoneScreenshots/`. The Robolectric renders are
-  for checking layout; a store page wants the real thing, and a Grove worth showing takes
-  a week of real use.
+- **The donation address.** `ui/settings/Donation.URL` is an empty string. Until it is
+  filled in, the Settings card renders with its button disabled and says so. One line to
+  change; no other code knows the URL.
 - **The spec document.** `docs/SPEC-AMENDMENTS.md` holds the rewritten §5.1, §5.6, §6,
   §6.1, §8.3, §9, §4, §5.7 and §3.2 text, ready to fold into the spec in `reference/`.
   That file is not in the repository, so a cloud session cannot edit it directly.
@@ -98,9 +101,7 @@ been exercised by reading the code.
    reach a milestone and pick a mint; fill a plant to twelve nodes and watch the next
    session start a new one; and check that the second launch goes straight to the hub
    with the principles still at Settings → Mintal's principles.
-2. Make the repository public, merge to `main`, tag, and work through `docs/FDROID.md`.
-   The donation URL stays empty until there is a reason for it; the Settings card already
-   says so in the build.
+2. Fill in the donation URL.
 3. UI strings into `strings.xml`, then the Spanish translation.
 4. Accessibility pass: TalkBack labels on hub tiles, chips and the mint chooser, contrast
    in both palettes, touch targets. The specification calls this a release gate.
