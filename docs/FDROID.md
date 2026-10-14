@@ -11,19 +11,17 @@ F-Droid's build server clones the source and builds it on their machine. `Nheox/
 is currently **private**, so nothing else on this list matters until it is public. This
 is the one hard blocker.
 
-### 2. A donation address
+### 2. A donation address — deliberately not yet
 
-One line, in `app/src/main/kotlin/dev/nheox/mintal/ui/settings/Donation.kt`:
+`Donation.URL` is an empty string, and the Support card in Settings renders with its
+button disabled and a line saying no address is set in this build. That is the intended
+state for the first release: an app with no users earns no donations, and registering a
+payment identity in your own name before anyone has installed it is a commitment with
+nothing on the other side of it.
 
-```kotlin
-val URL: String = ""
-```
-
-Until it is filled in, the Support card in Settings renders with its button disabled and
-a line saying no address is set in this build. The same URL goes in the `Donate:` field
-of `fdroid/dev.nheox.mintal.yml`.
-
-What the string looks like depends on the platform:
+When that changes it is one line, in
+`app/src/main/kotlin/dev/nheox/mintal/ui/settings/Donation.kt`, plus the matching line in
+`fdroid/dev.nheox.mintal.yml`. What the string looks like depends on the platform:
 
 | Platform | What to put in `URL` | F-Droid metadata field |
 |---|---|---|
@@ -44,12 +42,15 @@ whichever browser is already installed; Mintal never opens a socket.
 
 ### 3. Identity for the recipe
 
-`fdroid/dev.nheox.mintal.yml` has three `TODO` lines:
+`fdroid/dev.nheox.mintal.yml` is valid as it stands; two optional fields are commented
+out in it and worth a decision before the merge request:
 
 - `AuthorName` — the name that should appear as the app's author.
 - `AuthorEmail` — an address to put in public metadata. A forwarding alias is fine, and
   probably wiser than a personal address.
-- `Donate` — as above.
+
+Both are public and permanent in a way a commit is not: they end up on the app's F-Droid
+page, in their index, and in every mirror of it.
 
 ### 4. Confirm the licence wording
 

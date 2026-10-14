@@ -59,10 +59,6 @@ class SettingsViewModel @Inject constructor(
         preferences.setDetectForegroundApp(value)
     }
 
-    fun setShowOverlay(value: Boolean) = viewModelScope.launch {
-        preferences.setShowOverlay(value)
-    }
-
     fun setTheme(choice: ThemeChoice) = viewModelScope.launch { preferences.setTheme(choice) }
 
     fun setDayStartHour(hour: Int) = viewModelScope.launch {

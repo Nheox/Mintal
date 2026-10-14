@@ -10,23 +10,25 @@
 # is version-controlled with the app it describes, and so the version numbers at the
 # bottom can be updated in the same commit that bumps them in app/build.gradle.kts.
 #
-# Lines marked TODO still need a real value. See docs/FDROID.md.
+# It is valid as it stands. The commented-out lines are optional fields worth filling in
+# before the merge request; see docs/FDROID.md.
 #
 Categories:
   - Time
 
 License: GPL-3.0-only
 
-AuthorName: TODO
-AuthorEmail: TODO
+# AuthorName: the name that should appear as the app's author.
+# AuthorEmail: an address for public metadata — a forwarding alias is wiser than a
+# personal one.
 
 SourceCode: https://github.com/Nheox/Mintal
 IssueTracker: https://github.com/Nheox/Mintal/issues
 Changelog: https://github.com/Nheox/Mintal/releases
 
-# One of Donate / Liberapay / OpenCollective, matching whatever ui/settings/Donation.kt
-# points at. Delete the ones that do not apply.
-Donate: TODO
+# No donation address yet, by decision: ui/settings/Donation.kt holds an empty URL and
+# the app's Settings card says so. When there is one, add the matching line here —
+# Donate: for a plain URL, Liberapay: for a Liberapay handle.
 
 RepoType: git
 Repo: https://github.com/Nheox/Mintal.git

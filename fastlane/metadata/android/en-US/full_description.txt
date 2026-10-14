@@ -21,7 +21,6 @@ you unlock at each milestone is your choice.
 * Honest blocking: leaving mid-session gets a visible 15 second warning first, never a
   silent failure, and never control of your device
 * An optional allowlist, so a dictionary or a calculator does not cost you a session
-* An optional floating bubble with the time left, over whatever app is in front
 * Tags, ratings and notes on finished sessions
 * Statistics with hand-drawn charts: focus by hour, by day, by tag
 * CSV export and a full JSON backup you can restore

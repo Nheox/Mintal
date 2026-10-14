@@ -3,22 +3,4 @@
     <!-- Mirrors MintalColors.kt; used only by the pre-Compose window and launcher icon. -->
     <color name="mintal_window_background">#EAF8F0</color>
     <color name="mintal_launcher_background">#D7F2E3</color>
-
-    <!--
-      The floating session bubble, which is a plain Android view in a window of its own
-      rather than Compose. Both palettes are declared here and chosen in code, because
-      Mintal's own Light/Dark/System setting has to win over the system's — a -night
-      qualifier would only ever follow the system.
-    -->
-    <color name="mintal_overlay_surface_light">#D7F2E3</color>
-    <color name="mintal_overlay_on_surface_light">#07271A</color>
-    <color name="mintal_overlay_outline_light">#2F6D4F</color>
-    <color name="mintal_overlay_alert_light">#8E3B2F</color>
-    <color name="mintal_overlay_on_alert_light">#FFFFFF</color>
-
-    <color name="mintal_overlay_surface_dark">#16231D</color>
-    <color name="mintal_overlay_on_surface_dark">#E4F0E9</color>
-    <color name="mintal_overlay_outline_dark">#62A883</color>
-    <color name="mintal_overlay_alert_dark">#E8A294</color>
-    <color name="mintal_overlay_on_alert_dark">#3B100A</color>
 </resources>

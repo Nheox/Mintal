@@ -53,17 +53,18 @@ been exercised by reading the code.
 | Reported | Status |
 |---|---|
 | The Tags and Change-mint boxes have no margins | Fixed — both were hand-rolled `Card`s with 14dp and no border beside everyone else's `SectionCard`. `SectionCard` now takes an `onClick`, and `SectionCardScreenshotTest` stacks a plain and a tappable box so the next one cannot drift. |
-| No overlay while another app is in front | Added — an optional floating bubble with the time left, and the 15 second warning in the app's error colour. Draggable, tap to come back, off by default. Needs "display over other apps", which is a **new special access**: explained before it is requested, and the app is unchanged if refused. |
-| The tutorial steps go by too fast to read | Fixed — a beat was 2.6 s and is now 5.2 s, with the motion over the first three quarters so the caption holds still for the last 1.3 s. |
+| No overlay while another app is in front | Built, then removed at the owner's decision. It wanted `SYSTEM_ALERT_WINDOW` in an app that promises minimum permissions, and only earned it during the 15 second grace period — which a high-importance notification channel can cover with no permission at all. That channel is the open follow-up. |
+| The tutorial steps go by too fast to read | Left at 2.6 s for now. More seconds treats the symptom; the real fix is letting the reader advance or pause the beats, and that is worth doing only once someone has watched it on a device. |
 | The species list wants a single-entry card view | Added — a List/Cards toggle in the top bar, and tapping a row opens that mint's card. One mint per page, swiped horizontally: the plant at 220dp, the catalogue note, the field marks read back out of the drawing parameters, and its lock or selection state. |
 | Donation button and F-Droid | Prepared as far as it can be without the owner — see `docs/FDROID.md`, and the list below. |
 
 ## Needs the owner before release
 
-- **The donation address.** `ui/settings/Donation.URL` is an empty string. Until it is
-  filled in, the Settings card renders with its button disabled and says so. One line to
-  change; no other code knows the URL. `docs/FDROID.md` lists the platforms and the one
-  thing that actually decides between them — whether it pays out to a Chilean account.
+- **The donation address.** Deliberately still empty, and the Settings card says so in
+  the build. An app with no users earns no donations, and registering a payment identity
+  before anyone has installed it is a commitment with nothing on the other side.
+  `docs/FDROID.md` lists the platforms for when that changes; `ui/settings/Donation.URL`
+  is the one line, and no other code knows the URL.
 - **A public repository.** `Nheox/Mintal` is private, and F-Droid's build server clones
   the source and builds it on their machine. Nothing else about the submission matters
   until that changes.
@@ -92,16 +93,14 @@ been exercised by reading the code.
 
 ## Next, in the order worth doing it
 
-1. Install this build and exercise the new flows — and this time the overlay as well:
-   turn it on in Settings, grant the access, start a session, leave the app and check that
-   the bubble appears, that it drags, that tapping it comes back, that it turns red for
-   the 15 second warning, and that it is gone the moment Mintal is on screen again. Then: arm a session and cancel it; arm one
+1. Install this build and exercise the new flows: arm a session and cancel it; arm one
    and let it run; refuse the notification permission and check a session still runs;
    reach a milestone and pick a mint; fill a plant to twelve nodes and watch the next
    session start a new one; and check that the second launch goes straight to the hub
    with the principles still at Settings → Mintal's principles.
-2. Fill in the donation URL, make the repository public, and work through
-   `docs/FDROID.md`.
+2. Make the repository public, merge to `main`, tag, and work through `docs/FDROID.md`.
+   The donation URL stays empty until there is a reason for it; the Settings card already
+   says so in the build.
 3. UI strings into `strings.xml`, then the Spanish translation.
 4. Accessibility pass: TalkBack labels on hub tiles, chips and the mint chooser, contrast
    in both palettes, touch targets. The specification calls this a release gate.
@@ -112,9 +111,6 @@ been exercised by reading the code.
 - No instrumented tests. The service, the database and the Compose screens have no
   automated coverage; unit tests cover the state machine, statistics, chart axes,
   milestones, plant growth, Grove layout, CSV and time bucketing.
-- The overlay has no automated coverage at all. It is a `WindowManager` view built in a
-  service, which Robolectric cannot render and the screenshot tests cannot reach; every
-  claim about it in this document comes from reading the code.
 - A session is held in memory by the controller. If the process is killed mid-session the
   session is lost; the foreground service makes this unlikely but not impossible.
 - The planting window lives in the hub's ViewModel, so it is deliberately cancelled by

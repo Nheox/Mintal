@@ -98,11 +98,6 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 
 - `SessionController` is the heart: a state machine over a `SessionStore` interface and an
   injected clock, so it is fully unit-testable. Keep it that way.
-- `SessionOverlay` is the floating bubble, and it is plain Android views on purpose: a
-  `ComposeView` in a `WindowManager` window needs a lifecycle owner, a saved-state registry
-  and a view-model store supplied by hand before it draws anything, and the screenshot
-  renderer cannot reach it either way. The service drives it from the same `appInForeground`
-  signal the distraction detector uses.
 - The Grove is a *rendering*, not a table: `GroveLayoutBuilder` turns the session list into
   a bed of plants deterministically, seeded by session id, so it never reshuffles between
   launches. One successful session is one **node** (stem segment + opposite leaf pair) on
@@ -122,10 +117,13 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   offline from source and it would break.
 - No Google Play Services, no vendor SDKs, no analytics, no crash reporting, no IAP.
 - Every dependency OSI-licensed, resolvable from Maven Central or Google's Maven.
-- Permissions are a design constraint, not an implementation detail: five unavoidable ones,
-  three optional special accesses (Usage Access, display over other apps, ignoring battery
-  optimisation). Adding one needs a conversation — the overlay had one, in the third round
-  of device feedback, and is off by default like the others.
+- Permissions are a design constraint, not an implementation detail: four unavoidable ones,
+  one optional special access. Adding one needs a conversation.
+- A floating overlay over other apps was built and then removed, on purpose. It wanted
+  `SYSTEM_ALERT_WINDOW` — the permission overlay malware uses — in an app whose README
+  promises minimum permissions, and it only earned that in the fifteen seconds of the
+  grace period, which a high-importance notification channel can cover for free. If it is
+  ever asked for again, that is the cheaper answer to reach for first.
 
 ## Gotchas already paid for
 
@@ -177,8 +175,7 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - Comments explain *why*, never *what*. No comment is better than a restated line.
 - `domain/` stays free of Android framework imports.
 - UI strings are currently hardcoded in Compose. Moving them to `strings.xml` is the
-  prerequisite for the Spanish translation the owner wants. The exceptions are the few the
-  framework needs as resources: the notification channel and the overlay bubble.
+  prerequisite for the Spanish translation the owner wants.
 - F-Droid submission material lives in `fastlane/metadata/` (what the store page shows) and
   `fdroid/dev.nheox.mintal.yml` (the build recipe, destined for a merge request against
   fdroiddata). `docs/FDROID.md` is the checklist and says what is still blocked on the

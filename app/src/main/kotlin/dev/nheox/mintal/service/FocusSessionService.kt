@@ -6,7 +6,6 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
@@ -24,10 +23,8 @@ import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.data.prefs.MintalSettings
-import dev.nheox.mintal.data.prefs.ThemeChoice
 import dev.nheox.mintal.data.repository.AllowlistRepository
 import dev.nheox.mintal.data.species.SpeciesCatalog
-import dev.nheox.mintal.domain.session.RunningSession
 import dev.nheox.mintal.domain.session.SessionController
 import dev.nheox.mintal.domain.session.SessionRules
 import kotlinx.coroutines.CoroutineScope
@@ -54,8 +51,6 @@ class FocusSessionService : Service() {
 
     @Inject lateinit var notifications: SessionNotifications
 
-    @Inject lateinit var overlay: SessionOverlay
-
     @Inject lateinit var preferences: MintalPreferences
 
     @Inject lateinit var allowlistRepository: AllowlistRepository
@@ -77,9 +72,6 @@ class FocusSessionService : Service() {
     private val processObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             appInForeground = true
-            // Taken down here rather than on the next tick: a bubble that lingers half a
-            // second over Mintal's own screen reads as a bug.
-            overlay.hide()
         }
 
         override fun onStop(owner: LifecycleOwner) {
@@ -113,7 +105,6 @@ class FocusSessionService : Service() {
 
     override fun onDestroy() {
         loopJob?.cancel()
-        overlay.hide()
         releaseWakeLock()
         ProcessLifecycleOwner.get().lifecycle.removeObserver(processObserver)
         serviceScope.cancel()
@@ -174,7 +165,6 @@ class FocusSessionService : Service() {
                     controller.running.value,
                     speciesNames[running.speciesId],
                 )
-                updateOverlay(controller.running.value)
                 delay(TICK_MILLIS)
             }
         }
@@ -248,28 +238,7 @@ class FocusSessionService : Service() {
         return resolved
     }
 
-    /**
-     * The bubble is for the time Mintal is *not* on screen, so it follows the same signal
-     * the distraction detector does rather than a timer of its own.
-     */
-    private fun updateOverlay(running: RunningSession?) {
-        if (running == null || !settings.showOverlay || appInForeground) {
-            overlay.hide()
-            return
-        }
-        overlay.show(running, darkTheme = usingDarkTheme())
-    }
-
-    private fun usingDarkTheme(): Boolean = when (settings.theme) {
-        ThemeChoice.LIGHT -> false
-        ThemeChoice.DARK -> true
-        ThemeChoice.SYSTEM ->
-            (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
-    }
-
     private suspend fun onSessionEnded() {
-        overlay.hide()
         if (settings.vibrateOnFinish) vibrateOnce()
         releaseWakeLock()
         stopNow()

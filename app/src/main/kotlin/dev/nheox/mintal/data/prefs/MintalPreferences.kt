@@ -39,7 +39,6 @@ data class MintalSettings(
     val vibrateOnFinish: Boolean = true,
     val detectLeavingApp: Boolean = true,
     val detectForegroundApp: Boolean = false,
-    val showOverlay: Boolean = false,
     val onboardingComplete: Boolean = false,
     val starterTagsSeeded: Boolean = false,
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
@@ -60,7 +59,6 @@ class MintalPreferences @Inject constructor(
         val VIBRATE = booleanPreferencesKey("vibrate_on_finish")
         val DETECT_LEAVING = booleanPreferencesKey("detect_leaving_app")
         val DETECT_FOREGROUND = booleanPreferencesKey("detect_foreground_app")
-        val SHOW_OVERLAY = booleanPreferencesKey("show_overlay")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_complete")
         val STARTER_TAGS = booleanPreferencesKey("starter_tags_seeded")
         val THEME = stringPreferencesKey("theme")
@@ -84,7 +82,6 @@ class MintalPreferences @Inject constructor(
                 vibrateOnFinish = prefs[Keys.VIBRATE] ?: true,
                 detectLeavingApp = prefs[Keys.DETECT_LEAVING] ?: true,
                 detectForegroundApp = prefs[Keys.DETECT_FOREGROUND] ?: false,
-                showOverlay = prefs[Keys.SHOW_OVERLAY] ?: false,
                 onboardingComplete = prefs[Keys.ONBOARDING_DONE] ?: false,
                 starterTagsSeeded = prefs[Keys.STARTER_TAGS] ?: false,
                 theme = runCatching { ThemeChoice.valueOf(prefs[Keys.THEME] ?: "") }
@@ -112,8 +109,6 @@ class MintalPreferences @Inject constructor(
 
     suspend fun setDetectForegroundApp(enabled: Boolean) = edit { it[Keys.DETECT_FOREGROUND] = enabled }
 
-    suspend fun setShowOverlay(enabled: Boolean) = edit { it[Keys.SHOW_OVERLAY] = enabled }
-
     suspend fun setOnboardingComplete(complete: Boolean) = edit { it[Keys.ONBOARDING_DONE] = complete }
 
     suspend fun setStarterTagsSeeded(seeded: Boolean) = edit { it[Keys.STARTER_TAGS] = seeded }
@@ -132,7 +127,6 @@ class MintalPreferences @Inject constructor(
         prefs[Keys.VIBRATE] = settings.vibrateOnFinish
         prefs[Keys.DETECT_LEAVING] = settings.detectLeavingApp
         prefs[Keys.DETECT_FOREGROUND] = settings.detectForegroundApp
-        prefs[Keys.SHOW_OVERLAY] = settings.showOverlay
         prefs[Keys.ONBOARDING_DONE] = settings.onboardingComplete
         prefs[Keys.STARTER_TAGS] = settings.starterTagsSeeded
         prefs[Keys.THEME] = settings.theme.name
