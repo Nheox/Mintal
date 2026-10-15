@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-13, after the second round of on-device feedback.
+Last updated: 2026-10-14, after the third round of on-device feedback.
 
 ## Where the project stands
 
@@ -48,6 +48,37 @@ been exercised by reading the code.
 | Three buttons on the result screen, two alike | Cut to **Save** and **Discard**. "Save and start another" navigated exactly where "Save" did. |
 | The notification note had a tick-box | Removed, and with it the whole permission-note dismissal: the note is an advert for the permission with the grant button under it, shown once before Android asks. |
 
+## From the third device session
+
+Five changes. Three other things were asked for, discussed and dropped — see
+"Decided against", below.
+
+| Reported | Status |
+|---|---|
+| The Tag and Change-mint boxes have no margins | Fixed — both were hand-rolled `Card`s with 14dp and no border beside everyone else's `SectionCard`. `SectionCard` now takes an `onClick`, and `SectionCardScreenshotTest` stacks a plain and a tappable box so the next one cannot drift. |
+| Leaving the app kills the plant | Softened, in two steps. Failed sessions no longer stand in the Grove at all by default — they stay in the statistics, where the honest record belongs. Turning them back on is a switch in Settings, and a stub then fades out over a fortnight instead of standing there for good. What a failure costs is unchanged: no node, no time toward a milestone. |
+| The 15 second warning arrives silently | Fixed — it is now its own notification on its own high-importance channel, so it pops over whatever app is in front and makes a sound. The running-session notification stays quiet, which is what it is for, and Android will not let a channel's importance be raised after it is made, so the two have to be separate. |
+| "Save" and "Discard" describe something neither button does | Renamed to "Save rating and note" and "Skip", with a line above them saying the session is kept either way. The row is written when the session ends; nothing on that screen can create or delete it. |
+| The species list wants a single-entry card view | Added — a List/Cards toggle in the top bar, and tapping a row opens that mint's card. One mint per page, swiped horizontally: the plant at 220dp, the catalogue note, the field marks read back out of the same drawing parameters the art uses, and its lock or selection state. |
+
+## Decided against
+
+Recorded because each was built or half-built and then removed on purpose, and the next
+session should not quietly re-propose them.
+
+- **A floating overlay over other apps.** It wanted `SYSTEM_ALERT_WINDOW` — the permission
+  overlay malware uses — in an app whose README promises minimum permissions, and it only
+  earned that during the fifteen seconds of the grace period. Built, reviewed, removed —
+  and then superseded, because the high-importance warning channel carries the one thing
+  the overlay was actually for and costs no permission at all.
+- **Slowing the first-run tutorial.** A beat went from 2.6 s to 5.2 s and back. More
+  seconds treats the symptom; if it still reads too fast on a device, the fix is letting
+  the reader advance or pause the beats.
+- **F-Droid submission material.** Store metadata, a build recipe and release signing were
+  prepared and then removed: the owner is not submitting yet, and scaffolding that sits
+  unused for months goes stale and gets submitted stale. Worth redoing when the app is
+  actually ready to go out, against whatever F-Droid's requirements are then.
+
 ## Needs the owner before release
 
 - **The donation address.** `ui/settings/Donation.URL` is an empty string. Until it is
@@ -83,6 +114,9 @@ been exercised by reading the code.
 
 ## Known gaps
 
+- The grace warning notification has no automated coverage: posting it needs a real
+  notification manager, and the unit suite has none. Whether it actually pops and makes a
+  sound has to be checked on a device.
 - No instrumented tests. The service, the database and the Compose screens have no
   automated coverage; unit tests cover the state machine, statistics, chart axes,
   milestones, plant growth, Grove layout, CSV and time bucketing.

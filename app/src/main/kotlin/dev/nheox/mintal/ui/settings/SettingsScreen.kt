@@ -176,6 +176,15 @@ fun SettingsScreen(
                     onClick = onOpenAllowlist,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) { Text("Edit the allowlist") }
+                SettingSwitch(
+                    label = "Show failed sessions in the Grove",
+                    description = "Off by default. A failed session is always kept in " +
+                        "your statistics; this decides whether it also stands in the bed " +
+                        "as a wilted stub. When it is on, a stub fades out over two " +
+                        "weeks rather than staying there for good.",
+                    checked = settings.showFailuresInGrove,
+                    onCheckedChange = viewModel::setShowFailuresInGrove,
+                )
             }
 
             SectionCard(title = "Appearance") {

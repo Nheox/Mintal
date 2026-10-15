@@ -28,7 +28,7 @@ class SessionNotifications @Inject constructor(
         context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
 
     fun ensureChannel() {
-        val channel = NotificationChannel(
+        val session = NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.session_channel_name),
             NotificationManager.IMPORTANCE_LOW,
@@ -38,7 +38,57 @@ class SessionNotifications @Inject constructor(
             enableVibration(false)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
-        manager?.createNotificationChannel(channel)
+
+        // A second channel, and it has to be a second one: Android fixes a channel's
+        // importance when it is created and an app may only ever lower it afterwards.
+        // The running session wants to sit quietly in the shade, which is what makes the
+        // grace warning invisible — the fifteen seconds in which coming back still saves
+        // the session arrived silently, in the one place the user was not looking.
+        val warning = NotificationChannel(
+            WARNING_CHANNEL_ID,
+            context.getString(R.string.warning_channel_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = context.getString(R.string.warning_channel_description)
+            setShowBadge(false)
+            enableVibration(true)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        }
+
+        manager?.createNotificationChannel(session)
+        manager?.createNotificationChannel(warning)
+    }
+
+    /**
+     * The heads-up that the session is about to be lost. Separate from the ongoing
+     * notification rather than a change to it, because the ongoing one is bound to the
+     * quiet channel for as long as it exists.
+     *
+     * `setOnlyAlertOnce` is what makes the countdown bearable: the first post pops and
+     * sounds, and the twice-a-second updates after it change the number in place.
+     */
+    fun warnGracePeriod(secondsLeft: Int, speciesName: String?) {
+        val notification = NotificationCompat.Builder(context, WARNING_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification_leaf)
+            .setContentTitle(context.getString(R.string.notification_grace_warning))
+            .setContentText(
+                context.getString(R.string.notification_grace_seconds, secondsLeft) +
+                    (speciesName?.let { " · $it" } ?: ""),
+            )
+            .setContentIntent(openAppIntent())
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(false)
+            .setOngoing(true)
+            .build()
+        runCatching { manager?.notify(WARNING_NOTIFICATION_ID, notification) }
+    }
+
+    /** Called when the user comes back, and when the session ends either way. */
+    fun clearGraceWarning() {
+        runCatching { manager?.cancel(WARNING_NOTIFICATION_ID) }
     }
 
     fun build(running: RunningSession?, speciesName: String?): Notification {
@@ -109,7 +159,9 @@ class SessionNotifications @Inject constructor(
 
     companion object {
         const val CHANNEL_ID = "mintal_session"
+        const val WARNING_CHANNEL_ID = "mintal_warning"
         const val NOTIFICATION_ID = 1001
+        const val WARNING_NOTIFICATION_ID = 1002
         private const val REQUEST_OPEN = 10
         private const val REQUEST_GIVE_UP = 11
     }

@@ -18,8 +18,13 @@ data class GrovePlanting(
 )
 
 /**
- * A session that failed, which leaves a wilted stub rather than growth. They are kept and
- * drawn, because a Grove that quietly hides the bad days is a Grove that flatters.
+ * A session that failed, which leaves a wilted stub rather than growth.
+ *
+ * [fade] is 1f the day it happened and falls to 0f over the window [FailureDisplay.Fading]
+ * sets, at which point the stub is not built at all. A failed session is still in the
+ * database and still in the statistics either way — what fades is the scar in the bed, not
+ * the record. A Grove that keeps every bad day forever stops being a picture of your
+ * attention and becomes a list of your failures.
  */
 data class GroveStub(
     val sessionId: Long,
@@ -27,7 +32,39 @@ data class GroveStub(
     val slot: Int,
     val baseX: Float,
     val epochDay: Long,
+    val fade: Float = 1f,
 )
+
+/**
+ * What the bed does with failed sessions. Statistics are unaffected by either choice;
+ * this is only about what is drawn.
+ */
+sealed interface FailureDisplay {
+
+    /** Nothing is drawn for a failure. The default, and what the app ships with. */
+    data object Hidden : FailureDisplay
+
+    /** Drawn, fading out over [overDays] from [todayEpochDay], then gone. */
+    data class Fading(
+        val todayEpochDay: Long,
+        val overDays: Int = DEFAULT_FADE_DAYS,
+    ) : FailureDisplay
+
+    /** 0f means "do not build a stub for this at all". */
+    fun fadeFor(epochDay: Long): Float = when (this) {
+        Hidden -> 0f
+        is Fading -> {
+            val age = (todayEpochDay - epochDay).coerceAtLeast(0L)
+            val span = overDays.coerceAtLeast(1)
+            if (age >= span) 0f else 1f - age.toFloat() / span
+        }
+    }
+
+    companion object {
+        /** Long enough to learn something from, short enough not to be a monument. */
+        const val DEFAULT_FADE_DAYS = 14
+    }
+}
 
 /** Where a day's growth sits in the bed — the tap target for Day detail (spec §5.6). */
 data class GroveDayAnchor(
@@ -101,12 +138,13 @@ object GroveLayoutBuilder {
         speciesById: Map<String, Species> = emptyMap(),
         dayStartMinutes: Int = 0,
         zone: ZoneId = MintalTime.systemZone(),
+        failures: FailureDisplay = FailureDisplay.Hidden,
     ): GroveLayout {
         if (sessions.isEmpty()) return GroveLayout(emptyList(), emptyList(), emptyList(), EMPTY_BOUNDS)
 
         val ordered = sessions.sortedBy { it.startedAt }
         val successes = ordered.filter { it.outcome == SessionOutcome.SUCCESS }
-        val failures = ordered.filter { it.outcome != SessionOutcome.SUCCESS }
+        val failedSessions = ordered.filter { it.outcome != SessionOutcome.SUCCESS }
 
         // Chunking by species is what caps growth: the thirteenth session of a mint
         // starts its second plant rather than making the first one taller.
@@ -125,11 +163,11 @@ object GroveLayoutBuilder {
         // Everything standing in the bed, in the order it was planted, so the bed reads
         // left to right as a history. A stub takes a narrow place of its own: a bad week
         // should be visible without pushing a month of growth off the screen.
-        val standing: List<Standing> = (growths + failures.map { Standing.Failure(it) })
+        val standing: List<Standing> = (growths + failedSessions.map { Standing.Failure(it) })
             .sortedBy { it.startedAt }
 
         val plantings = ArrayList<GrovePlanting>(growths.size)
-        val stubs = ArrayList<GroveStub>(failures.size)
+        val stubs = ArrayList<GroveStub>(failedSessions.size)
         val nodePositions = HashMap<Long, Pair<Float, Float>>()
         var cursor = 0f
 
@@ -159,20 +197,31 @@ object GroveLayoutBuilder {
                     cursor += SLOT_WIDTH / 2f
                 }
                 is Standing.Failure -> {
-                    cursor += STUB_WIDTH / 2f
-                    stubs += GroveStub(
-                        sessionId = item.session.id,
-                        speciesId = item.session.speciesId,
-                        slot = slot,
-                        baseX = cursor,
-                        epochDay = MintalTime.epochDayOf(
-                            item.session.startedAt,
-                            zone,
-                            dayStartMinutes,
-                        ),
+                    val epochDay = MintalTime.epochDayOf(
+                        item.session.startedAt,
+                        zone,
+                        dayStartMinutes,
                     )
-                    nodePositions[item.session.id] = cursor to -0.35f
-                    cursor += STUB_WIDTH / 2f
+                    val fade = failures.fadeFor(epochDay)
+                    if (fade <= 0f) {
+                        // Not drawn, and taking no width — but still given the position it
+                        // would have had, so the day it belongs to keeps its anchor and
+                        // stays reachable from the Grove. A day on which nothing grew is
+                        // still a day you can open.
+                        nodePositions[item.session.id] = cursor to -0.35f
+                    } else {
+                        cursor += STUB_WIDTH / 2f
+                        stubs += GroveStub(
+                            sessionId = item.session.id,
+                            speciesId = item.session.speciesId,
+                            slot = slot,
+                            baseX = cursor,
+                            epochDay = epochDay,
+                            fade = fade,
+                        )
+                        nodePositions[item.session.id] = cursor to -0.35f
+                        cursor += STUB_WIDTH / 2f
+                    }
                 }
             }
         }

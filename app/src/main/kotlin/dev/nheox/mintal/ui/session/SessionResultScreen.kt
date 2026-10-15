@@ -114,7 +114,7 @@ fun SessionResultScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            viewModel.save()
+                            viewModel.saveRatingAndNote()
                             onChooseMint()
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -157,24 +157,32 @@ fun SessionResultScreen(
                 minLines = 2,
             )
 
-            // Two buttons, because there were only ever two outcomes. "Save and start
-            // another" went to the same place as "Save" — the hub is where another
-            // session starts from — so it promised a difference it did not make.
+            // These were "Save" and "Discard", which described something neither of them
+            // did. The session row is written when the session ends, two screens ago;
+            // nothing here can create or delete it. "Discard" in particular read as
+            // "throw this session away" — the one thing it has never done.
+            Text(
+                text = "Either way the session is kept. This is only the rating and the " +
+                    "note.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
             Button(
                 onClick = {
-                    viewModel.save()
+                    viewModel.saveRatingAndNote()
                     onDone()
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Save") }
+            ) { Text("Save rating and note") }
 
             OutlinedButton(
                 onClick = {
-                    viewModel.dismiss()
+                    viewModel.skipRatingAndNote()
                     onDone()
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Discard") }
+            ) { Text("Skip") }
 
             Spacer(modifier = Modifier.height(20.dp))
         }

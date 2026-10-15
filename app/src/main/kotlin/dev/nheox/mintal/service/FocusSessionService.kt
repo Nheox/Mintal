@@ -105,6 +105,7 @@ class FocusSessionService : Service() {
 
     override fun onDestroy() {
         loopJob?.cancel()
+        notifications.clearGraceWarning()
         releaseWakeLock()
         ProcessLifecycleOwner.get().lifecycle.removeObserver(processObserver)
         serviceScope.cancel()
@@ -161,10 +162,17 @@ class FocusSessionService : Service() {
                 }
                 controller.setDistracted(isUserAway())
                 controller.tick()
-                notifications.update(
-                    controller.running.value,
-                    speciesNames[running.speciesId],
-                )
+                val current = controller.running.value
+                notifications.update(current, speciesNames[running.speciesId])
+                // The one alert the app makes: the ongoing notification is deliberately
+                // silent, so without this the grace period runs out behind whatever the
+                // user is actually looking at.
+                val grace = current?.graceRemainingSeconds
+                if (grace != null) {
+                    notifications.warnGracePeriod(grace, speciesNames[running.speciesId])
+                } else {
+                    notifications.clearGraceWarning()
+                }
                 delay(TICK_MILLIS)
             }
         }
@@ -239,6 +247,7 @@ class FocusSessionService : Service() {
     }
 
     private suspend fun onSessionEnded() {
+        notifications.clearGraceWarning()
         if (settings.vibrateOnFinish) vibrateOnce()
         releaseWakeLock()
         stopNow()

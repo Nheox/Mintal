@@ -110,6 +110,20 @@ data class PlantColours(
             flush = null,
         )
     }
+
+    /** The same colours, thinned — how an old wilted stub leaves the bed. */
+    fun fadedTo(alpha: Float): PlantColours {
+        val factor = alpha.coerceIn(0f, 1f)
+        fun Color.thinned() = copy(alpha = this.alpha * factor)
+        return PlantColours(
+            leaf = leaf.thinned(),
+            stem = stem.thinned(),
+            flower = flower.thinned(),
+            hair = hair.thinned(),
+            variegation = variegation.thinned(),
+            flush = flush?.thinned(),
+        )
+    }
 }
 
 /**

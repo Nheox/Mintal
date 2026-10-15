@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,6 +9,29 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.hilt)
 }
+
+/**
+ * Release signing, for the APKs this project publishes itself — a GitHub release, a build
+ * handed to someone to try. Android will not install an unsigned APK at all, so without
+ * this `assembleRelease` produces a file that cannot be used for anything.
+ *
+ * Values come from a gitignored `keystore.properties` at the repository root for a local
+ * build, or from the matching environment variables in CI. With neither present the
+ * release build is left unsigned rather than failing, because `assembleRelease` has to
+ * keep working for CI and for anyone who has just cloned the repository and has no key.
+ *
+ * The keystore itself never enters the repository, and neither do the passwords. Losing
+ * it means never being able to publish an update: Android identifies an app by its
+ * signature, and there is no recovery process.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+
+fun signingSecret(property: String, environment: String): String? =
+    (keystoreProperties.getProperty(property) ?: System.getenv(environment))
+        ?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "dev.nheox.mintal"
@@ -21,10 +45,31 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        val storePath = signingSecret("storeFile", "MINTAL_KEYSTORE_FILE")
+        val storePassword = signingSecret("storePassword", "MINTAL_KEYSTORE_PASSWORD")
+        val keyAlias = signingSecret("keyAlias", "MINTAL_KEY_ALIAS")
+        val keyPassword = signingSecret("keyPassword", "MINTAL_KEY_PASSWORD")
+        if (storePath != null && storePassword != null && keyAlias != null && keyPassword != null) {
+            create("release") {
+                // An absolute path is taken as-is, so CI can point at a keystore it
+                // decoded into a temporary directory outside the checkout.
+                this.storeFile = rootProject.file(storePath)
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
+            // Null when no keystore was configured, which leaves the APK unsigned and
+            // therefore uninstallable. The release workflow checks for that rather than
+            // publishing one by accident.
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

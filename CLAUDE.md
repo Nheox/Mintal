@@ -66,9 +66,12 @@ export ANDROID_HOME=/opt/android-sdk
 ```
 
 The screenshot tests are the only way to see the UI here, and they are worth running on
-any art or chart change: `species-sheet-*` (all twelve mints), `grove-bed-*` (a mixed
-bed), `grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `charts-focus-*` and
-`charts-rating-*` (the statistics axes at the sizes that broke them).
+any art or chart change: `species-sheet-*` (all twelve mints), `species-card-*` and
+`species-list-light` (the two layouts of the catalogue), `grove-bed-*` (a mixed bed),
+`grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `grove-stubs-fading` (a failed
+session at four ages, and the one past the window that is not drawn), `section-cards-*` (plain and
+tappable boxes on the same edges), and `charts-focus-*` and `charts-rating-*` (the
+statistics axes at the sizes that broke them).
 
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
@@ -101,6 +104,12 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   launches. One successful session is one **node** (stem segment + opposite leaf pair) on
   that species' youngest unfinished plant; at twelve nodes a plant is mature and the next
   session starts a new one beside it. `PlantBuilder` owns that structure and is pure.
+- Failures do not stand in the Grove by default. `GroveLayoutBuilder.build` takes a
+  `FailureDisplay`: `Hidden` (what ships) draws no stub and gives it no width, so the bed
+  is identical to one the failure never happened in; `Fading(todayEpochDay)` draws it and
+  thins it out over a fortnight. Either way the session is in the database and in the
+  statistics — the setting decides what is *drawn*, never what is *kept*. A hidden failure
+  still records a position so its day keeps its Grove anchor and stays openable.
 - Unlocks have **two** sources of truth, and the split is the thing to keep hold of:
   *how many* mints are unlocked is derived from one `SUM` over successful sessions and
   never stored; *which* ones is the player's choice at each milestone, and that is the one
@@ -156,6 +165,23 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   The first-run footer was duplicated in `PrinciplesScreenshotTest`, so a render "proving"
   the inset fix was a render of a copy that never had it. Make the real composable
   `internal` and call it.
+- Android fixes a notification channel's importance when the channel is created, and an
+  app may only ever lower it afterwards. The running-session notification is deliberately
+  `IMPORTANCE_LOW` and silent, which is right for a timer and was wrong for the fifteen
+  second warning riding on it — it arrived with no sound and no heads-up, in the one place
+  the user had already stopped looking. The warning is therefore a *second* notification on
+  a *second* `IMPORTANCE_HIGH` channel, posted with `setOnlyAlertOnce(true)` so the first
+  post alerts and the twice-a-second updates only change the number.
+- Nothing on the result screen creates or deletes a session: `SessionController.finish()`
+  wrote the row when the session ended, two screens earlier. The buttons there decide the
+  fate of the rating and the note and nothing else, which is why they are called "Save
+  rating and note" and "Skip" — they were "Save" and "Discard", and "Discard" read as
+  "throw this session away", the one thing it has never done.
+- A tappable box hand-rolled beside `SectionCard` comes out with its own padding and no
+  border, and 2dp of difference is invisible in review and obvious on a phone — that is how
+  the hub's Mint and Tag boxes ended up visibly tighter than their neighbours. `SectionCard`
+  takes an `onClick`; use it rather than a bare `Card`. `SectionCardScreenshotTest` stacks
+  both kinds so the next one cannot drift.
 
 ## Conventions
 
@@ -164,6 +190,27 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - `domain/` stays free of Android framework imports.
 - UI strings are currently hardcoded in Compose. Moving them to `strings.xml` is the
   prerequisite for the Spanish translation the owner wants.
+
+## Releasing
+
+`.github/workflows/release.yml` builds a signed APK and publishes a GitHub release when a
+`v*` tag is pushed. Shipping a version is: bump `versionCode` **and** `versionName` in
+`app/build.gradle.kts`, commit, `git tag v0.2.0`, `git push origin v0.2.0`.
+
+- The signing key is the owner's, kept out of the repository, and reaches CI through four
+  repository secrets (`MINTAL_KEYSTORE_BASE64`, `MINTAL_KEYSTORE_PASSWORD`,
+  `MINTAL_KEY_ALIAS`, `MINTAL_KEY_PASSWORD`). `app/build.gradle.kts` reads them from the
+  environment, or from a gitignored `keystore.properties` for a local release build.
+- **With no key configured the release build succeeds and produces
+  `app-release-unsigned.apk`**, which Android cannot install at all. That is deliberate —
+  CI and a fresh clone have to keep working — so the workflow checks the filename and the
+  `apksigner` output before it publishes anything.
+- The workflow also refuses a tag whose version disagrees with `versionName`, because the
+  mistake is otherwise invisible until someone has installed the thing.
+- That signature is Mintal's identity on GitHub only. F-Droid signs with its own key, so
+  the two builds are different apps to Android and cannot update each other. Never
+  regenerate or replace the key once a release is public: there is no recovery, and
+  everyone would have to uninstall.
 
 ## Current state and next steps
 

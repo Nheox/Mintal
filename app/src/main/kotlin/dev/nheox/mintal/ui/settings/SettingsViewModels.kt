@@ -59,6 +59,10 @@ class SettingsViewModel @Inject constructor(
         preferences.setDetectForegroundApp(value)
     }
 
+    fun setShowFailuresInGrove(value: Boolean) = viewModelScope.launch {
+        preferences.setShowFailuresInGrove(value)
+    }
+
     fun setTheme(choice: ThemeChoice) = viewModelScope.launch { preferences.setTheme(choice) }
 
     fun setDayStartHour(hour: Int) = viewModelScope.launch {

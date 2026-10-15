@@ -41,6 +41,23 @@ Nextcloud, a local folder — whatever is already installed). Mintal holds no cr
 talks to no sync API, and runs no backend. One-way backup to storage you already own is
 not two-way sync, which stays out of scope.
 
+## Installing it
+
+Releases are on the [Releases page](https://github.com/Nheox/Mintal/releases): download the
+`.apk` and open it on an Android phone running 8.0 or newer. Android will ask whether to
+allow installing from this source — that is its normal warning for anything that did not
+come from the Play Store, not a sign of a problem with the file.
+
+For updates without checking back, add this repository to
+[Obtainium](https://github.com/ImranR98/Obtainium), which installs and updates Android
+apps straight from GitHub releases.
+
+Each release is signed with a key held by the author. Should Mintal ever appear in
+F-Droid, that build would be signed with F-Droid's key instead, which makes it a different
+app as far as Android is concerned: the two cannot update each other, and moving from one
+to the other means uninstalling first. Export a backup before you do (Settings → Save a
+full backup) or the Grove goes with it.
+
 ## State of the project
 
 Early. The v1 feature set is implemented — countdown and count-up sessions, the Grove,

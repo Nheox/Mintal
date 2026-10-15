@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.nheox.mintal.core.model.SessionOutcome
 import dev.nheox.mintal.core.model.Species
+import dev.nheox.mintal.core.time.MintalClock
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.db.entity.SessionEntity
 import dev.nheox.mintal.data.db.entity.TagEntity
@@ -13,6 +14,7 @@ import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.data.repository.SessionRepository
 import dev.nheox.mintal.data.repository.SpeciesRepository
 import dev.nheox.mintal.data.repository.TagRepository
+import dev.nheox.mintal.domain.grove.FailureDisplay
 import dev.nheox.mintal.domain.grove.GroveBounds
 import dev.nheox.mintal.domain.grove.GroveDayAnchor
 import dev.nheox.mintal.domain.grove.GroveLayout
@@ -49,6 +51,7 @@ data class GroveUiState(
 class GroveViewModel @Inject constructor(
     sessionRepository: SessionRepository,
     private val speciesRepository: SpeciesRepository,
+    private val clock: MintalClock,
     preferences: MintalPreferences,
 ) : ViewModel() {
 
@@ -63,6 +66,16 @@ class GroveViewModel @Inject constructor(
             sessions = sessions,
             speciesById = catalogue,
             dayStartMinutes = settings.dayStartMinutes,
+            failures = if (settings.showFailuresInGrove) {
+                FailureDisplay.Fading(
+                    todayEpochDay = MintalTime.epochDayOf(
+                        clock.nowMillis(),
+                        dayStartMinutes = settings.dayStartMinutes,
+                    ),
+                )
+            } else {
+                FailureDisplay.Hidden
+            },
         )
         GroveUiState(
             loading = false,
