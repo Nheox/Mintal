@@ -191,6 +191,27 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 - UI strings are currently hardcoded in Compose. Moving them to `strings.xml` is the
   prerequisite for the Spanish translation the owner wants.
 
+## Releasing
+
+`.github/workflows/release.yml` builds a signed APK and publishes a GitHub release when a
+`v*` tag is pushed. Shipping a version is: bump `versionCode` **and** `versionName` in
+`app/build.gradle.kts`, commit, `git tag v0.2.0`, `git push origin v0.2.0`.
+
+- The signing key is the owner's, kept out of the repository, and reaches CI through four
+  repository secrets (`MINTAL_KEYSTORE_BASE64`, `MINTAL_KEYSTORE_PASSWORD`,
+  `MINTAL_KEY_ALIAS`, `MINTAL_KEY_PASSWORD`). `app/build.gradle.kts` reads them from the
+  environment, or from a gitignored `keystore.properties` for a local release build.
+- **With no key configured the release build succeeds and produces
+  `app-release-unsigned.apk`**, which Android cannot install at all. That is deliberate —
+  CI and a fresh clone have to keep working — so the workflow checks the filename and the
+  `apksigner` output before it publishes anything.
+- The workflow also refuses a tag whose version disagrees with `versionName`, because the
+  mistake is otherwise invisible until someone has installed the thing.
+- That signature is Mintal's identity on GitHub only. F-Droid signs with its own key, so
+  the two builds are different apps to Android and cannot update each other. Never
+  regenerate or replace the key once a release is public: there is no recovery, and
+  everyone would have to uninstall.
+
 ## Current state and next steps
 
 See `docs/STATUS.md`.
