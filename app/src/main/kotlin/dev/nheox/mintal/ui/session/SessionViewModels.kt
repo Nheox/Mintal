@@ -298,7 +298,13 @@ class SessionResultViewModel @Inject constructor(
      * the application scope because the caller navigates away in the same breath, which
      * cancels this ViewModel's own scope.
      */
-    fun save() {
+    /**
+     * Attaches the rating and the note to the session row, which already exists: the
+     * session was written by `SessionController.finish()` the moment it ended. Nothing on
+     * this screen can create or destroy a session, which is why neither button is called
+     * "save" or "discard" any more.
+     */
+    fun saveRatingAndNote() {
         val current = state.value
         val session = current.session ?: return
         val rating = current.rating
@@ -309,7 +315,8 @@ class SessionResultViewModel @Inject constructor(
         controller.clearResult()
     }
 
-    fun dismiss() = controller.clearResult()
+    /** Leaves the session exactly as it was recorded, with no rating and no note. */
+    fun skipRatingAndNote() = controller.clearResult()
 
     val outcomeText: StateFlow<String> = state.map { ui ->
         when {

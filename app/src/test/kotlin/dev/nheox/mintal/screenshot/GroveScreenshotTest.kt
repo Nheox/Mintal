@@ -35,6 +35,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import dev.nheox.mintal.core.time.MintalTime
+import dev.nheox.mintal.domain.grove.FailureDisplay
 import org.robolectric.annotation.GraphicsMode
 import java.util.concurrent.atomic.AtomicLong
 
@@ -105,7 +107,11 @@ class GroveScreenshotTest {
                             .background(mintalPalette.grovePaper),
                     ) {
                         GroveCanvas(
-                            layout = GroveLayoutBuilder.build(history, byId),
+                            layout = GroveLayoutBuilder.build(
+                                history,
+                                byId,
+                                failures = stubsShown(history),
+                            ),
                             speciesById = byId,
                             onDayTap = {},
                         )
@@ -114,6 +120,15 @@ class GroveScreenshotTest {
             }
         }
     }
+
+    /**
+     * Failures are hidden in the shipped default, so a render that wants to show what a
+     * wilted stub looks like has to ask for them. Anchored on the newest session rather
+     * than on the wall clock, or the stubs would be years old and faded to nothing.
+     */
+    private fun stubsShown(history: List<SessionEntity>) = FailureDisplay.Fading(
+        todayEpochDay = MintalTime.epochDayOf(history.maxOf { it.startedAt }),
+    )
 
     @Composable
     private fun Stages(species: Species, theme: ThemeChoice) {
@@ -161,6 +176,69 @@ class GroveScreenshotTest {
         }
     }
 
+    /**
+     * The same four failures at four ages, so the fade can be looked at rather than
+     * trusted. A stub two weeks old is not drawn at all, which is the point of the
+     * window: a bad afternoon should not still be standing in the bed next month.
+     */
+    @Composable
+    private fun FadingStubs(species: List<Species>, theme: ThemeChoice) {
+        val byId = species.associateBy { it.id }
+        val today = 20_000L
+        val history = listOf(0, 4, 9, 13, FailureDisplay.DEFAULT_FADE_DAYS)
+            .mapIndexed { index, age ->
+                val id = nextId.getAndIncrement()
+                SessionEntity(
+                    id = id,
+                    startedAt = MintalTime.startOfDayMillis(today - age) + index * 60_000L,
+                    endedAt = MintalTime.startOfDayMillis(today - age) + index * 60_000L,
+                    plannedSeconds = 1500,
+                    actualSeconds = 600,
+                    mode = SessionMode.COUNTDOWN,
+                    outcome = SessionOutcome.LEFT_APP,
+                    speciesId = "spicata",
+                    tagId = null,
+                    rating = null,
+                    note = null,
+                    timezoneId = "UTC",
+                )
+            } + sessions("spicata", 6)
+
+        MintalTheme(theme = theme) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(420.dp)
+                            .background(mintalPalette.grovePaper),
+                    ) {
+                        GroveCanvas(
+                            layout = GroveLayoutBuilder.build(
+                                history,
+                                byId,
+                                failures = FailureDisplay.Fading(todayEpochDay = today),
+                            ),
+                            speciesById = byId,
+                            onDayTap = {},
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `renders wilted stubs fading out with age`() {
+        val shot = ScreenshotRenderer.render("grove-stubs-fading") {
+            FadingStubs(catalogue(), ThemeChoice.LIGHT)
+        }
+        assertTrue(shot.length() > 0)
+    }
+
     @Test
     fun `renders a mixed bed, light and dark`() {
         val species = catalogue()
@@ -188,7 +266,11 @@ class GroveScreenshotTest {
                             .background(mintalPalette.grovePaper),
                     ) {
                         GroveCanvas(
-                            layout = GroveLayoutBuilder.build(history, byId),
+                            layout = GroveLayoutBuilder.build(
+                                history,
+                                byId,
+                                failures = stubsShown(history),
+                            ),
                             speciesById = byId,
                             onDayTap = {},
                         )

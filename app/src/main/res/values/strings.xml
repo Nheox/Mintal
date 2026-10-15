@@ -8,4 +8,8 @@
     <string name="notification_give_up">Give up</string>
     <string name="notification_session_running">Focus session running</string>
     <string name="notification_grace_warning">Come back to Mintal or the session fails</string>
+    <string name="notification_grace_seconds">%1$d seconds left</string>
+
+    <string name="warning_channel_name">Session about to fail</string>
+    <string name="warning_channel_description">The fifteen second warning before a session is failed for leaving the app. Silencing this channel means a session can fail without you noticing.</string>
 </resources>

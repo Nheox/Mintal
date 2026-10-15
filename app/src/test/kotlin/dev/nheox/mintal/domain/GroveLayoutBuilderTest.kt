@@ -4,9 +4,11 @@ import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.model.SessionOutcome
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.db.entity.SessionEntity
+import dev.nheox.mintal.domain.grove.FailureDisplay
 import dev.nheox.mintal.domain.grove.GroveLayoutBuilder
 import dev.nheox.mintal.domain.grove.PlantBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.ZoneId
@@ -107,7 +109,7 @@ class GroveLayoutBuilderTest {
     }
 
     @Test
-    fun `a failed session leaves a wilted stub and grows nothing`() {
+    fun `a failed session leaves a wilted stub and grows nothing, when stubs are shown`() {
         val layout = GroveLayoutBuilder.build(
             listOf(
                 session(1, 100),
@@ -117,9 +119,68 @@ class GroveLayoutBuilderTest {
             emptyMap(),
             0,
             utc,
+            FailureDisplay.Fading(todayEpochDay = 100),
         )
         assertEquals(1, layout.plantings.single().plant.nodeCount)
         assertEquals(listOf(2L, 3L), layout.stubs.map { it.sessionId })
+        assertTrue(layout.stubs.all { it.fade == 1f }, "a stub from today is at full strength")
+    }
+
+    @Test
+    fun `failures are not drawn by default, and take no room in the bed`() {
+        val sessions = listOf(
+            session(1, 100),
+            session(2, 100, outcome = SessionOutcome.GAVE_UP),
+            session(3, 100),
+        )
+        val hidden = GroveLayoutBuilder.build(sessions, emptyMap(), 0, utc)
+        val successesOnly = GroveLayoutBuilder.build(
+            sessions.filter { it.outcome == SessionOutcome.SUCCESS },
+            emptyMap(),
+            0,
+            utc,
+        )
+
+        assertTrue(hidden.stubs.isEmpty())
+        // The failure must not leave a gap where its stub would have stood: the bed has
+        // to be identical to one that never contained it.
+        assertEquals(
+            successesOnly.plantings.map { it.baseX },
+            hidden.plantings.map { it.baseX },
+        )
+    }
+
+    @Test
+    fun `a hidden failure still leaves its day reachable`() {
+        val layout = GroveLayoutBuilder.build(
+            listOf(session(1, 100), session(2, 101, outcome = SessionOutcome.LEFT_APP)),
+            emptyMap(),
+            0,
+            utc,
+        )
+        assertTrue(layout.stubs.isEmpty())
+        // A day on which nothing grew is still a day you can open from the Grove.
+        assertEquals(listOf(100L, 101L), layout.anchors.map { it.epochDay })
+    }
+
+    @Test
+    fun `a stub fades with age and is gone once the window passes`() {
+        val days = FailureDisplay.DEFAULT_FADE_DAYS
+        fun stubFadeAfter(age: Int): Float? = GroveLayoutBuilder.build(
+            listOf(session(1, 100, outcome = SessionOutcome.GAVE_UP)),
+            emptyMap(),
+            0,
+            utc,
+            FailureDisplay.Fading(todayEpochDay = 100L + age),
+        ).stubs.singleOrNull()?.fade
+
+        assertEquals(1f, stubFadeAfter(0), "the day it happened, a stub is at full strength")
+        assertTrue(
+            stubFadeAfter(days / 2)!! < 0.6f,
+            "half way through the window it should be most of the way gone",
+        )
+        assertNull(stubFadeAfter(days), "past the window there is no stub at all")
+        assertNull(stubFadeAfter(days * 3))
     }
 
     @Test

@@ -129,7 +129,7 @@ fun GroveCanvas(
                 origin = project(stub.baseX, 0f),
                 unitPx = view.scale,
                 species = speciesById[stub.speciesId],
-                colours = PlantColours.wilted(palette),
+                colours = PlantColours.wilted(palette).fadedTo(stub.fade),
             )
         }
     }
