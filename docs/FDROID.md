@@ -22,7 +22,7 @@ GitHub release the same app to Android, and either can update the other.
 | A reproducible build | Verified for `v0.2.0` — see below |
 | Listing text | `fastlane/metadata/android/en-US/` — title, short and full description |
 | "What's new" | `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` |
-| An icon | **Not yet.** The launcher icon is adaptive XML only, which F-Droid cannot render, so the listing needs `images/icon.png` (512×512) |
+| An icon | `images/icon.png`, 512×512, rendered from the launcher icon (below). Needed because the launcher icon is adaptive XML only, which F-Droid cannot render |
 | Screenshots | **Not yet.** See below |
 
 There are no anti-features to declare: no network access, no tracking, no ads, no
@@ -31,19 +31,25 @@ non-free dependencies.
 ## Screenshots and icon
 
 Take the screenshots on a phone — hub, a running session, the Grove, statistics, a
-species card — and add them, with the icon, as
+species card — and add them as
 
 ```
-fastlane/metadata/android/en-US/images/icon.png
 fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 fastlane/metadata/android/en-US/images/phoneScreenshots/2.png
 …
 ```
 
-F-Droid picks them up from this repository at the tagged commit, so they arrive with the
-next release after they are committed. The listing works without screenshots; it is only
-plainer. Without `icon.png` it shows a generic placeholder, because the APK holds no PNG
-launcher icon to fall back on (minSdk 26 lets AGP ship the adaptive XML alone).
+The icon, `fastlane/metadata/android/en-US/images/icon.png`, is not drawn by hand.
+`LauncherIconScreenshotTest` renders it from `R.mipmap.ic_launcher`, framed on the leaf
+and masked to a circle; after any change to the launcher icon, run
+`./gradlew testDebugUnitTest --tests "*LauncherIconScreenshotTest*"` and copy
+`app/build/screenshots/store-icon.png` over it. Without it the listing would show a
+generic placeholder, because the APK holds no PNG launcher icon to fall back on (minSdk
+26 lets AGP ship the adaptive XML alone).
+
+F-Droid picks all of these up from this repository at the tagged commit, so they arrive
+with the next release after they are committed. The listing works without screenshots;
+it is only plainer.
 
 ## Submitting: two ways
 

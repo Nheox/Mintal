@@ -211,8 +211,8 @@ session should not quietly re-propose them.
    0.2.0 goes out ahead of it, at the owner's call; the gate is still the gate.
 2. **F-Droid**, per `docs/FDROID.md`: the merge request to `fdroiddata` with the recipe
    there. Separately, screenshots from a phone into
-   `fastlane/metadata/android/en-US/images/phoneScreenshots/` and a 512×512
-   `images/icon.png`, which reach the listing with the next tagged release.
+   `fastlane/metadata/android/en-US/images/phoneScreenshots/`. They and the store icon,
+   already in `images/icon.png`, reach the listing with the next tagged release.
 3. Fill in the donation URL, once there are testers to ask.
 4. Translation, if and when it is wanted.
 5. An illustrator, if the UdeC enquiry turns one up.

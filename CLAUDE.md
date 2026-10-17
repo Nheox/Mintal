@@ -76,8 +76,10 @@ any art or chart change: `species-sheet-*` (all twelve mints), `species-card-*` 
 `species-list-light` (the two layouts of the catalogue), `grove-bed-*` (a mixed bed),
 `grove-stages` (one mint at 1, 3, 6, 9 and 12 nodes), `grove-stubs-fading` (a failed
 session at four ages, and the one past the window that is not drawn), `section-cards-*` (plain and
-tappable boxes on the same edges), and `charts-focus-*` and `charts-rating-*` (the
-statistics axes at the sizes that broke them).
+tappable boxes on the same edges), `charts-focus-*` and `charts-rating-*` (the
+statistics axes at the sizes that broke them), and `store-icon` (the F-Droid listing icon,
+drawn from the launcher icon — copy it to `fastlane/metadata/android/en-US/images/icon.png`
+after any change to `ic_launcher`).
 
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
