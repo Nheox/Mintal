@@ -154,15 +154,18 @@ fun SettingsScreen(
                 SettingSwitch(
                     label = "Fail a session if I leave the app",
                     description = "Needs no permission. Leaving Mintal starts a 15 second " +
-                        "warning; a dark screen or a phone call never counts as leaving.",
+                        "warning; a dark screen, the lock screen or a phone call never " +
+                        "counts as leaving. On its own it cannot tell the home screen from " +
+                        "another app, so going home counts too.",
                     checked = settings.detectLeavingApp,
                     onCheckedChange = viewModel::setDetectLeavingApp,
                 )
                 SettingSwitch(
                     label = "Also check which app is in front",
-                    description = "Optional. Uses Android's Usage Access so an allowlisted " +
-                        "app — a dictionary, say — does not fail a session. Mintal works " +
-                        "fully without it, and never asks for it to start a session.",
+                    description = "Optional. Uses Android's Usage Access to see what is in " +
+                        "front, so the home screen and an allowlisted app — a dictionary, " +
+                        "say — do not fail a session; only opening another app does. Mintal " +
+                        "works fully without it, and never asks for it to start a session.",
                     checked = settings.detectForegroundApp,
                     onCheckedChange = viewModel::setDetectForegroundApp,
                 )
