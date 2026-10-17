@@ -52,6 +52,11 @@ For updates without checking back, add this repository to
 [Obtainium](https://github.com/ImranR98/Obtainium), which installs and updates Android
 apps straight from GitHub releases.
 
+If you tried a build from a CI run's artifacts, it was signed with a throwaway debug key
+and a release cannot update it: Android will say the app is not installed. Save a backup
+(Settings → Save a full backup), uninstall it, install the release, and restore the
+backup (Settings → Restore from a backup).
+
 Each release is signed with a key held by the author. Should Mintal ever appear in
 F-Droid, that build would be signed with F-Droid's key instead, which makes it a different
 app as far as Android is concerned: the two cannot update each other, and moving from one

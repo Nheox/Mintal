@@ -252,4 +252,176 @@ class SessionControllerTest {
         assertEquals(SessionOutcome.SUCCESS, store.recorded.single().outcome)
         assertEquals(25 * 60, store.recorded.single().actualSeconds)
     }
+
+    @Test
+    fun `a pause stops the clock, so the countdown ends later rather than early`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+        controller.tick()
+        assertNotNull(controller.running.value, "the pause ending must not end the session")
+        assertEquals(300, controller.running.value?.elapsedSeconds, "paused time is not focus time")
+
+        // The two paused minutes are owed back: the session still needs its full 25.
+        clock.advanceSeconds(25 * 60 - 300L)
+        controller.tick()
+        assertNull(controller.running.value)
+        assertEquals(25 * 60, store.recorded.single().actualSeconds)
+    }
+
+    @Test
+    fun `leaving the app while paused never starts the grace period`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+
+        controller.setDistracted(true)
+        clock.advanceSeconds(60)
+        controller.tick()
+
+        assertNotNull(controller.running.value, "a pause is for leaving the app")
+        assertNull(controller.running.value?.graceRemainingSeconds)
+        assertTrue(store.recorded.isEmpty())
+    }
+
+    @Test
+    fun `the pause counts down and ends by itself`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        assertEquals(SessionRules.PAUSE_SECONDS, controller.running.value?.pauseRemainingSeconds)
+
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS - 1L)
+        controller.tick()
+        assertEquals(1, controller.running.value?.pauseRemainingSeconds)
+
+        clock.advanceSeconds(1)
+        controller.tick()
+        assertNull(controller.running.value?.pauseRemainingSeconds, "the pause is over")
+        assertEquals(false, controller.running.value?.isPaused)
+    }
+
+    @Test
+    fun `resuming early only gives back the time actually paused`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+        clock.advanceSeconds(30)
+        controller.resume()
+        controller.tick()
+
+        assertEquals(300, controller.running.value?.elapsedSeconds)
+        assertNull(controller.running.value?.pauseRemainingSeconds)
+    }
+
+    @Test
+    fun `the next pause waits thirty seconds after the last one ended`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        clock.advanceSeconds(20)
+        controller.resume()
+        assertEquals(SessionRules.PAUSE_COOLDOWN_SECONDS, controller.running.value?.pauseCooldownSeconds)
+        assertEquals(false, controller.running.value?.canPause)
+
+        controller.pause()
+        assertEquals(false, controller.running.value?.isPaused, "refused during the cooldown")
+
+        clock.advanceSeconds(SessionRules.PAUSE_COOLDOWN_SECONDS - 1L)
+        controller.tick()
+        assertEquals(1, controller.running.value?.pauseCooldownSeconds)
+
+        clock.advanceSeconds(1)
+        controller.tick()
+        assertNull(controller.running.value?.pauseCooldownSeconds)
+        assertEquals(true, controller.running.value?.canPause)
+
+        controller.pause()
+        assertEquals(true, controller.running.value?.isPaused, "available again")
+    }
+
+    @Test
+    fun `a pause that runs out by itself starts the cooldown too`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+        controller.tick()
+
+        assertEquals(false, controller.running.value?.isPaused)
+        assertEquals(SessionRules.PAUSE_COOLDOWN_SECONDS, controller.running.value?.pauseCooldownSeconds)
+    }
+
+    @Test
+    fun `a fresh session can pause straight away`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        controller.resume()
+        controller.giveUp()
+
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        assertEquals(true, controller.running.value?.canPause, "a cooldown does not outlive its session")
+    }
+
+    @Test
+    fun `a pause expiring while still away gives a full grace period, not an instant failure`() =
+        runTest {
+            controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+            clock.advanceSeconds(300)
+            controller.pause()
+            controller.setDistracted(true)
+
+            clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+            controller.tick()
+            assertNotNull(controller.running.value, "the pause running out must not fail it")
+
+            // The service reports the user is still away on the very next tick.
+            controller.setDistracted(true)
+            controller.tick()
+            assertEquals(SessionRules.GRACE_SECONDS, controller.running.value?.graceRemainingSeconds)
+
+            clock.advanceSeconds(SessionRules.GRACE_SECONDS.toLong())
+            controller.tick()
+            assertNull(controller.running.value)
+            assertEquals(SessionOutcome.LEFT_APP, store.recorded.single().outcome)
+        }
+
+    @Test
+    fun `the tag can change mid-session, and the row carries the new one`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", tagId = 1L)
+        clock.advanceSeconds(600)
+        controller.tick()
+        controller.setTag(2L)
+        controller.tick()
+
+        val running = controller.running.value
+        assertEquals(2L, running?.tagId)
+        assertEquals(600, running?.elapsedSeconds, "a label moves no clock")
+        assertEquals(25 * 60, running?.plannedSeconds)
+        assertEquals("spicata", running?.speciesId)
+
+        clock.advanceSeconds(25 * 60 - 600L)
+        controller.tick()
+        assertEquals(2L, store.recorded.single().tagId)
+    }
+
+    @Test
+    fun `a session started tagged can end untagged`() = runTest {
+        controller.start(SessionMode.COUNT_UP, 0, "spicata", tagId = 1L)
+        clock.advanceSeconds(120)
+        controller.setTag(null)
+        controller.stopCountUp()
+
+        assertNull(store.recorded.single().tagId)
+    }
+
+    @Test
+    fun `giving up during a pause records only the focused time`() = runTest {
+        controller.start(SessionMode.COUNT_UP, 0, "spicata", null)
+        clock.advanceSeconds(600)
+        controller.pause()
+        clock.advanceSeconds(90)
+        controller.giveUp()
+
+        assertEquals(600, store.recorded.single().actualSeconds, "the 90 paused seconds are not focus")
+    }
 }

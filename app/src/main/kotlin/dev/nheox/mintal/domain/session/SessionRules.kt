@@ -12,6 +12,20 @@ object SessionRules {
     const val GRACE_SECONDS = 15
 
     /**
+     * A session can be paused for this long (spec §5.2.1). While it is paused the clock
+     * is stopped and leaving the app does nothing at all — that is what the pause is for.
+     */
+    const val PAUSE_SECONDS = 120
+
+    /**
+     * After a pause ends, the next one waits this long (spec §5.2.1), with the wait counted
+     * down on the button. Back-to-back pauses would make the grace period of §5.3 optional;
+     * a gap keeps a pause something you take, not a state you live in. Paused time never
+     * counts as focus, so pausing can only make a session longer, never easier.
+     */
+    const val PAUSE_COOLDOWN_SECONDS = 30
+
+    /**
      * A session is armed, not started, for this long after START is pressed. Nothing is
      * written and no service runs during it, so backing out leaves no row, no plant and
      * no wilted stub — the point being that a mistyped duration or a wrong tag should not

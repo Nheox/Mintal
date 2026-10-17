@@ -114,9 +114,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          gh release create "$GITHUB_REF_NAME" "$APK_PATH" \
-            --title "Mintal $GITHUB_REF_NAME" \
-            --notes-file - <<'NOTES'
+          # "What's new" comes from the same file F-Droid shows, so the two cannot say
+          # different things about one version.
+          CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts)
+          CHANGES="fastlane/metadata/android/en-US/changelogs/${CODE}.txt"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          {
+          if [ -f "$CHANGES" ]; then
+            printf "## What's new\n\n"
+            cat "$CHANGES"
+            printf "\n"
+          fi
+          cat <<'NOTES'
+          ## Installing
+
           Install the `.apk` below on an Android phone (8.0 or newer). Your phone will ask
           you to allow installing from this source — that is Android's normal warning for
           anything not from the Play Store, not a problem with the file.
@@ -127,6 +138,10 @@ jobs:
           Mintal has no internet permission, no account and no analytics. Everything stays
           on your device.
           NOTES
+          } > "$NOTES_FILE"
+          gh release create "$GITHUB_REF_NAME" "$APK_PATH" \
+            --title "Mintal $GITHUB_REF_NAME" \
+            --notes-file "$NOTES_FILE"
 
       # Also kept as a build artifact, so a workflow_dispatch run (no tag, no release)
       # still produces something installable to test with.

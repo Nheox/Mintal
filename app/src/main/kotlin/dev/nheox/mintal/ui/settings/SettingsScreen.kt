@@ -154,19 +154,35 @@ fun SettingsScreen(
                 SettingSwitch(
                     label = "Fail a session if I leave the app",
                     description = "Needs no permission. Leaving Mintal starts a 15 second " +
-                        "warning; a dark screen or a phone call never counts as leaving.",
+                        "warning; a dark screen, the lock screen or a phone call never " +
+                        "counts as leaving. On its own it cannot tell the home screen from " +
+                        "another app, so going home counts too.",
                     checked = settings.detectLeavingApp,
                     onCheckedChange = viewModel::setDetectLeavingApp,
                 )
+                // This one refines the switch above rather than standing on its own: with
+                // leaving not counted at all, there is nothing for it to refine. It used to
+                // stay switchable anyway, and was tested on a device that way — turned on,
+                // with the first one off — and reasonably read as broken.
                 SettingSwitch(
                     label = "Also check which app is in front",
-                    description = "Optional. Uses Android's Usage Access so an allowlisted " +
-                        "app — a dictionary, say — does not fail a session. Mintal works " +
-                        "fully without it, and never asks for it to start a session.",
-                    checked = settings.detectForegroundApp,
+                    description = if (settings.detectLeavingApp) {
+                        "Optional. Uses Android's Usage Access to see what is in front, so " +
+                            "the home screen and an allowlisted app — a dictionary, say — do " +
+                            "not fail a session; only opening another app does. Mintal works " +
+                            "fully without it, and never asks for it to start a session."
+                    } else {
+                        "Only works together with the switch above, which is off, so " +
+                            "nothing fails a session for leaving the app."
+                    },
+                    checked = settings.detectForegroundApp && settings.detectLeavingApp,
                     onCheckedChange = viewModel::setDetectForegroundApp,
+                    enabled = settings.detectLeavingApp,
                 )
-                if (settings.detectForegroundApp && !UsageAccess.isGranted(context)) {
+                if (settings.detectLeavingApp &&
+                    settings.detectForegroundApp &&
+                    !UsageAccess.isGranted(context)
+                ) {
                     OutlinedButton(
                         onClick = { explaining = MintalPermission.USAGE_ACCESS },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -388,13 +404,22 @@ private fun SettingSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     description: String? = null,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
             if (description != null) {
                 Text(
                     text = description,
@@ -403,6 +428,6 @@ private fun SettingSwitch(
                 )
             }
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }

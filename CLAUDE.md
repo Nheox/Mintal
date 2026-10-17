@@ -6,14 +6,20 @@ the chat that built this project will not survive.
 ## What this is
 
 An Android focus timer built around real *Mentha* species, written from a product
-specification (v0.3). Local-first, GPL-3.0, aimed at F-Droid. Finish a focus session and
-it is grafted onto **the Grove**, one continuously growing mint network.
+specification. Local-first, GPL-3.0, aimed at F-Droid. Finish a focus session and it adds
+one **node** to a mint in **the Grove**, a bed of plants that is the record of your
+attention.
+
+The spec is in the repository at `docs/SPEC.md` (v0.4) and is the source of truth for
+behaviour. It was folded together from v0.3 plus three rounds of on-device feedback, so
+§13.1 is the place to look before re-proposing anything — several decisions there were
+made *against* the obvious option on purpose.
 
 ## Branch workflow
 
-- Develop on `ccr-d6d58d3f-dpo66a`. Push there.
-- `main` is deliberately untouched — the owner chose to keep the work on the branch until
-  the app has been exercised on a device. Do not merge to `main` without being asked.
+- Develop on `claude/mintal-remaining-work-bsmkbl`. Push there.
+- `main` now carries everything (`ff1b43c`): the owner merged it once the app had been
+  exercised on a device. Still do not merge to `main` without being asked.
 - Never force-push; never rewrite pushed history.
 
 ## Setting up a fresh cloud container
@@ -75,6 +81,12 @@ statistics axes at the sizes that broke them).
 
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
+
+**The first full `test` run after a cloud session starts may fail every Robolectric test**
+with `UnsatisfiedLinkError` from `org.robolectric.nativeruntime` — screenshot tests and
+`LeafGeometryTest` alike, while the plain JVM tests pass. It has happened twice, a re-run
+passed both times with nothing changed, and CI has never shown it. Re-run before
+suspecting the diff.
 
 ## Looking at the UI without a device
 
@@ -177,6 +189,16 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   fate of the rating and the note and nothing else, which is why they are called "Save
   rating and note" and "Skip" — they were "Save" and "Discard", and "Discard" read as
   "throw this session away", the one thing it has never done.
+- `PowerManager.isInteractive` is false only while the device is *asleep*. The lock screen
+  is interactive, so "screen off never fails a session" checked that way still failed
+  everyone who woke their phone to look at the time. `KeyguardManager.isKeyguardLocked`
+  is the check for "locked", and a locked phone is never someone using another app.
+- The usage-events log records **switches, not states**. "No foreground event in the
+  last N seconds" means "nobody switched", not "nothing is in front" — read it the second
+  way and anyone who opens one app and stays in it is never caught, which is what layer B
+  did while its window (10 s) was shorter than the grace period (15 s). The last app seen
+  in front is sticky in `FocusSessionService`, and `DistractionPolicy` makes the decision
+  where `DistractionPolicyTest` can see it.
 - A tappable box hand-rolled beside `SectionCard` comes out with its own padding and no
   border, and 2dp of difference is invisible in review and obvious on a phone — that is how
   the hub's Mint and Tag boxes ended up visibly tighter than their neighbours. `SectionCard`
@@ -194,8 +216,18 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 ## Releasing
 
 `.github/workflows/release.yml` builds a signed APK and publishes a GitHub release when a
-`v*` tag is pushed. Shipping a version is: bump `versionCode` **and** `versionName` in
-`app/build.gradle.kts`, commit, `git tag v0.2.0`, `git push origin v0.2.0`.
+`v*` tag is pushed. Shipping a version is:
+
+1. bump `versionCode` **and** `versionName` in `app/build.gradle.kts`;
+2. write `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (500 characters
+   at most) — it is both F-Droid's "What's new" and the top of the GitHub release notes;
+3. get it onto `main`, and tag `main`: `git tag v0.3.0`, `git push origin v0.3.0`.
+
+Tag what is on `main`, not a branch. The first release nearly went out from a `main` that
+was a week behind the code the owner had been testing.
+
+F-Droid is not part of this loop once it has accepted the app: its recipe watches tags.
+How to get it accepted the first time is in `docs/FDROID.md`.
 
 - The signing key is the owner's, kept out of the repository, and reaches CI through four
   repository secrets (`MINTAL_KEYSTORE_BASE64`, `MINTAL_KEYSTORE_PASSWORD`,

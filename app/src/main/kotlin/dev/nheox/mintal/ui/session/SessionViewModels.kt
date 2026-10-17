@@ -190,6 +190,7 @@ data class RunningUiState(
     val running: RunningSession? = null,
     val species: Species? = null,
     val tagName: String? = null,
+    val tags: List<TagEntity> = emptyList(),
     val keepScreenOn: Boolean = false,
 )
 
@@ -198,6 +199,7 @@ class SessionRunningViewModel @Inject constructor(
     private val controller: SessionController,
     private val speciesRepository: SpeciesRepository,
     private val tagRepository: TagRepository,
+    private val clock: MintalClock,
     preferences: MintalPreferences,
 ) : ViewModel() {
 
@@ -218,6 +220,7 @@ class SessionRunningViewModel @Inject constructor(
             running = running,
             species = catalogue.firstOrNull { it.id == running?.speciesId },
             tagName = tags.firstOrNull { it.id == running?.tagId }?.name,
+            tags = tags,
             keepScreenOn = settings.keepScreenOn,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RunningUiState())
@@ -229,6 +232,23 @@ class SessionRunningViewModel @Inject constructor(
     fun giveUp() = viewModelScope.launch { controller.giveUp() }
 
     fun stopCountUp() = viewModelScope.launch { controller.stopCountUp() }
+
+    fun pause() = controller.pause()
+
+    fun resume() = controller.resume()
+
+    /**
+     * Changes this session's tag only. The hub's choice for the next session is left
+     * alone: correcting one session is not a statement about the one after it.
+     */
+    fun setTag(tagId: Long?) = controller.setTag(tagId)
+
+    /** Duplicate names are rejected by the repository, which leaves the tag as it was. */
+    fun createTag(name: String) = viewModelScope.launch {
+        val colourIndex = state.value.tags.size % TagRepository.TAG_PALETTE_SIZE
+        val id = tagRepository.create(name, colourIndex, clock.nowMillis())
+        if (id != null) controller.setTag(id)
+    }
 }
 
 data class ResultUiState(

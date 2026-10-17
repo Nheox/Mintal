@@ -113,8 +113,15 @@ class SessionNotifications @Inject constructor(
                 .build()
         }
 
+        val pause = running.pauseRemainingSeconds
         val grace = running.graceRemainingSeconds
-        if (grace != null) {
+        if (pause != null) {
+            // Without this the notification shows a clock that has silently stopped,
+            // which reads as the session having broken rather than being paused.
+            builder
+                .setContentTitle("Paused · ${MintalTime.formatClock(pause)} left")
+                .setContentText(speciesName ?: context.getString(R.string.notification_session_running))
+        } else if (grace != null) {
             builder
                 .setContentTitle(context.getString(R.string.notification_grace_warning))
                 .setContentText("${grace}s left to come back")

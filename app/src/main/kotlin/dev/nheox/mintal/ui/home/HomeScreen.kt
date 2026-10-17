@@ -23,21 +23,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -57,12 +53,12 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalTime
-import dev.nheox.mintal.data.repository.TagRepository
 import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.ui.components.GrowthTrack
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SectionCard
 import dev.nheox.mintal.ui.components.SpeciesEmblem
+import dev.nheox.mintal.ui.components.TagPickerDialog
 import dev.nheox.mintal.ui.permissions.MintalPermission
 import dev.nheox.mintal.ui.permissions.PermissionRationaleDialog
 import dev.nheox.mintal.ui.session.SessionSetupViewModel
@@ -368,58 +364,20 @@ fun HomeScreen(
     }
 
     if (showTagPicker) {
-        var newTagName by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showTagPicker = false },
-            title = { Text("Choose a tag") },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    TextButton(
-                        onClick = {
-                            viewModel.selectTag(null)
-                            showTagPicker = false
-                        },
-                    ) { Text("No tag") }
-                    state.tags.forEach { tag ->
-                        TextButton(
-                            onClick = {
-                                viewModel.selectTag(tag.id)
-                                showTagPicker = false
-                            },
-                        ) { Text(tag.name) }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
-                    OutlinedTextField(
-                        value = newTagName,
-                        onValueChange = {
-                            if (it.length <= TagRepository.MAX_NAME_LENGTH) newTagName = it
-                        },
-                        label = { Text("New tag") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(
-                            enabled = newTagName.isNotBlank(),
-                            onClick = {
-                                viewModel.createTag(newTagName)
-                                newTagName = ""
-                                showTagPicker = false
-                            },
-                        ) { Text("Create and use") }
-                        TextButton(
-                            onClick = {
-                                showTagPicker = false
-                                onOpenTags()
-                            },
-                        ) { Text("Manage tags") }
-                    }
-                }
+        TagPickerDialog(
+            tags = state.tags,
+            onPick = { id ->
+                viewModel.selectTag(id)
+                showTagPicker = false
             },
-            confirmButton = {
-                TextButton(onClick = { showTagPicker = false }) { Text("Close") }
+            onCreate = { name ->
+                viewModel.createTag(name)
+                showTagPicker = false
+            },
+            onDismiss = { showTagPicker = false },
+            onManageTags = {
+                showTagPicker = false
+                onOpenTags()
             },
         )
     }

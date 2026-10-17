@@ -1,0 +1,42 @@
+Stay focused, stay mintalized.
+
+Mintal is a focus timer built around real plants. Choose how long you want to
+concentrate, start the timer, and leave your phone alone. Finish the block and the
+session is planted in your Grove — a bed of mints that grows one node at a time and
+becomes the record of your attention.
+
+Every plant is a real species of Mentha, drawn from its actual field marks: spearmint's
+pointed serrated leaf, apple mint's white-woolly pucker, Corsican mint's creeping mat
+of tiny round leaves. Twelve of them unlock as your focused hours accumulate, and each
+milestone lets you choose which one you want next.
+
+FEATURES
+
+* Countdown sessions from 5 minutes to 3 hours, or count up like a stopwatch
+* The Grove: one session is one node, twelve nodes is a mature plant, and the next
+  session starts another beside it
+* Twelve Mentha species, each with a botanical note, unlocked by cumulative focus time
+* Leave the app and a visible fifteen-second warning gives you time to come back
+* An allowlist, so checking a dictionary does not end a session
+* Tags with colours, an optional note, and a 1-5 rating for every session
+* Statistics: totals, best focus day, best focus hour, time per tag, rating over time
+* Export everything as CSV, or back up and restore the whole database as JSON
+* Light and dark themes
+
+PRIVACY, PLAINLY
+
+Mintal declares no INTERNET permission at all. Not "we promise not to look" — the app
+cannot open a network connection, and you can verify that in the manifest. There is no
+account, no sign-in, no sync, no analytics, no crash reporting, no advertising, and no
+Google Play Services. Everything lives in a database on your device, and you can export
+or delete all of it whenever you like.
+
+Nothing is for sale. There is no premium tier, no cosmetic purchase, and no species
+locked behind a price. Every feature is available to everyone.
+
+Mintal asks for four permissions, all of them implied by "a timer that keeps running":
+foreground service, notifications, wake lock and vibrate. Two further permissions are
+optional, explained in Mintal's own words before Android asks, and the app works fully
+if you refuse them.
+
+Free software under the GPL-3.0.

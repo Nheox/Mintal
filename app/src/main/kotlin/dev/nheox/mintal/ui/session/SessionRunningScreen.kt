@@ -8,8 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,8 +42,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.domain.session.SessionResult
+import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SpeciesEmblem
+import dev.nheox.mintal.ui.components.TagPickerDialog
 import dev.nheox.mintal.ui.components.SessionBar
 import dev.nheox.mintal.ui.theme.MintalTextStyles
 import kotlinx.coroutines.delay
@@ -57,6 +64,7 @@ fun SessionRunningScreen(
     val live by viewModel.live.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
     var showGiveUpDialog by remember { mutableStateOf(false) }
+    var showTagPicker by remember { mutableStateOf(false) }
     var legendIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -140,8 +148,45 @@ fun SessionRunningScreen(
                 inGracePeriod = running?.inGracePeriod == true,
             )
 
-            if (state.tagName != null) {
-                AssistChip(onClick = {}, label = { Text(text = state.tagName ?: "") })
+            // Always shown, so a session started untagged can still be given one. It used
+            // to be a chip with an empty onClick: drawn to be tapped and doing nothing.
+            AssistChip(
+                onClick = { showTagPicker = true },
+                label = { Text(text = state.tagName ?: "Add a tag") },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Change tag",
+                        modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    )
+                },
+            )
+
+            val paused = running?.pauseRemainingSeconds
+            if (paused != null) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "Paused · ${MintalTime.formatClock(paused)} left",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = "The clock is stopped and leaving Mintal is safe. " +
+                                "The session carries on by itself when the pause runs out, " +
+                                "and the next pause is available " +
+                                "${SessionRules.PAUSE_COOLDOWN_SECONDS} seconds after that.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Button(
+                            onClick = { viewModel.resume() },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Resume now") }
+                    }
+                }
             }
 
             val grace = running?.graceRemainingSeconds
@@ -185,11 +230,42 @@ fun SessionRunningScreen(
                 ) { Text("Stop and keep it") }
             }
 
+            val cooldown = running?.pauseCooldownSeconds
+            if (running?.canPause == true) {
+                OutlinedButton(
+                    onClick = { viewModel.pause() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Pause for ${SessionRules.PAUSE_SECONDS / 60} minutes") }
+            } else if (cooldown != null) {
+                // Shown disabled rather than hidden, so the button does not jump the
+                // layout when it comes back, and the wait is visible rather than a mystery.
+                OutlinedButton(
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Pause again in ${cooldown}s") }
+            }
+
             OutlinedButton(
                 onClick = { showGiveUpDialog = true },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Give up") }
         }
+    }
+
+    if (showTagPicker) {
+        TagPickerDialog(
+            tags = state.tags,
+            onPick = { id ->
+                viewModel.setTag(id)
+                showTagPicker = false
+            },
+            onCreate = { name ->
+                viewModel.createTag(name)
+                showTagPicker = false
+            },
+            onDismiss = { showTagPicker = false },
+        )
     }
 
     if (showGiveUpDialog) {
@@ -198,8 +274,9 @@ fun SessionRunningScreen(
             title = { Text("Give up this session?") },
             text = {
                 Text(
-                    "It will be recorded with the time you managed so far, and grafted onto " +
-                        "the Grove as a wilted sprig. No species is earned.",
+                    "It will be recorded with the time you managed so far, and counted in " +
+                        "your statistics. No node is added to your mint, and the time does " +
+                        "not go toward the next milestone.",
                 )
             },
             confirmButton = {

@@ -48,6 +48,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.nheox.mintal.core.model.SpeciesStatus
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.data.prefs.MintalPreferences
+import dev.nheox.mintal.data.prefs.SpeciesViewMode
 import dev.nheox.mintal.data.repository.SessionRepository
 import dev.nheox.mintal.data.repository.SpeciesRepository
 import dev.nheox.mintal.domain.milestone.MilestoneEngine
@@ -68,10 +69,8 @@ data class SpeciesUiState(
     val nextMilestoneMinutes: Int? = null,
     val pendingChoices: Int = 0,
     val progress: Float = 0f,
+    val viewMode: SpeciesViewMode = SpeciesViewMode.LIST,
 )
-
-/** How the catalogue is laid out: the scrolling list, or one mint at a time. */
-enum class SpeciesViewMode { LIST, CARDS }
 
 @HiltViewModel
 class SpeciesViewModel @Inject constructor(
@@ -94,10 +93,14 @@ class SpeciesViewModel @Inject constructor(
             nextMilestoneMinutes = MilestoneEngine.nextThresholdMinutes(catalogue, total),
             pendingChoices = pending,
             progress = MilestoneEngine.progressToNext(catalogue, total),
+            viewMode = settings.speciesViewMode,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SpeciesUiState())
 
     fun select(id: String) = viewModelScope.launch { preferences.setSelectedSpecies(id) }
+
+    fun setViewMode(mode: SpeciesViewMode) =
+        viewModelScope.launch { preferences.setSpeciesViewMode(mode) }
 }
 
 /**
@@ -113,19 +116,19 @@ class SpeciesViewModel @Inject constructor(
 fun SpeciesScreen(onBack: () -> Unit, onChooseMint: () -> Unit) {
     val viewModel: SpeciesViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var mode by rememberSaveable { mutableStateOf(SpeciesViewMode.LIST) }
     // Kept across a switch of layout, so coming back from the list lands on the mint the
-    // card view was last showing rather than back at spearmint.
+    // card view was last showing rather than back at spearmint. Unlike the layout itself,
+    // this is state about one visit and is deliberately not persisted.
     var focused by rememberSaveable { mutableStateOf(0) }
 
     SpeciesContent(
         state = state,
-        mode = mode,
+        mode = state.viewMode,
         focused = focused,
         onBack = onBack,
         onChooseMint = onChooseMint,
         onSelect = viewModel::select,
-        onModeChange = { mode = it },
+        onModeChange = viewModel::setViewMode,
         onFocusedChange = { focused = it },
     )
 }
