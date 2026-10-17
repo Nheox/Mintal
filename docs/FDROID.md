@@ -39,16 +39,39 @@ plainer.
 
 ## Submitting: two ways
 
-**The easy way — ask F-Droid to package it.** Open an issue at
-<https://gitlab.com/fdroid/rfp/-/issues> ("Request For Packaging") with the name, the
-source link <https://github.com/Nheox/Mintal>, the licence (GPL-3.0-only) and a sentence
-about what the app does. A volunteer writes the recipe. No git needed; the queue can take
-weeks.
+Both are done from the owner's GitLab account, **`mintal`**. The group `mintal-group` is
+not needed for this, and the code stays on GitHub: the recipe points F-Droid there.
 
-**The direct way — submit the recipe yourself.** Fork
-<https://gitlab.com/fdroid/fdroiddata>, add the file below as
-`metadata/dev.nheox.mintal.yml`, and open a merge request. GitLab's CI builds the app from
-the recipe, and a reviewer takes it from there. Faster, but it is a git workflow.
+**Submit only once the GitHub release is a full release, not a pre-release.** F-Droid
+watches tags and ignores GitHub's pre-release label, so it would publish a version the
+owner had not yet called finished.
+
+**The easy way — ask F-Droid to package it.** Open an issue at
+<https://gitlab.com/fdroid/rfp/-/issues> ("Request For Packaging"). A volunteer writes the
+recipe. No git needed; the queue can take weeks or months. Text to paste, adjusted to
+whatever the issue template asks:
+
+> **Mintal** — a focus timer that grows real mint plants.
+>
+> - Source code: <https://github.com/Nheox/Mintal>
+> - Licence: GPL-3.0-only
+> - Suggested category: Time
+> - Build: `gradle assembleRelease` in `app/`; tagged releases (`v0.2.0` onward);
+>   listing text and changelogs in `fastlane/metadata/android/en-US/`
+> - No `INTERNET` permission, no proprietary dependencies, no Play Services, no tracking
+> - I am the author, submitting it myself.
+
+**The direct way — submit the recipe yourself**, which is faster and can be done entirely
+in the browser:
+
+1. Signed in as `mintal`, open <https://gitlab.com/fdroid/fdroiddata> and press **Fork**
+   (into the personal namespace).
+2. In the fork, open the `metadata` folder, choose **+ → New file**, name it
+   `dev.nheox.mintal.yml`, and paste the recipe below.
+3. **Commit changes** to a *new branch*, with "Start a new merge request" ticked.
+4. Make the merge request target `fdroid/fdroiddata`, fill in its checklist, and submit.
+   GitLab's CI builds the app from the recipe; a reviewer takes it from there and may ask
+   for changes in the merge request's comments.
 
 ```yaml
 Categories:

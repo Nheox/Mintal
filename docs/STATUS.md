@@ -211,10 +211,15 @@ session should not quietly re-propose them.
    targets, and one TalkBack pass over hub → session → result → mint chooser.
    0.2.0 goes out ahead of it, at the owner's call; the gate is still the gate.
 2. **Tag `v0.2.0`** — the owner's step, see "Needs the owner before release".
-3. **F-Droid**, per `docs/FDROID.md`: screenshots from a phone into
+   The owner plans to publish 0.2.0 as a GitHub **pre-release** first, and untick the
+   label once the accessibility check and screenshots are done. Same APK, no rebuild:
+   the workflow listens for `release: published`, not for the later edit.
+3. **F-Droid**, per `docs/FDROID.md`, once 0.2.0 is a full release rather than a
+   pre-release: screenshots from a phone into
    `fastlane/metadata/android/en-US/images/phoneScreenshots/`, then either a Request For
-   Packaging issue (no git) or a merge request to `fdroiddata` with the recipe there.
-   Nothing blocks it except step 2.
+   Packaging issue or a merge request to `fdroiddata`, both doable in the browser. The
+   owner has a GitLab account for it, `mintal` (there is also a group, `mintal-group`,
+   which the submission does not need).
 4. Fill in the donation URL, once there are testers to ask.
 5. Translation, if and when it is wanted.
 6. An illustrator, if the UdeC enquiry turns one up.
