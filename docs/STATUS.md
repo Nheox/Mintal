@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-14, after the third round of on-device feedback.
+Last updated: 2026-10-17, after folding the spec amendments into `docs/SPEC.md`.
 
 ## Where the project stands
 
@@ -10,14 +10,24 @@ grace period, the Grove, twelve *Mentha* species on cumulative-time milestones, 
 ratings and notes, statistics with hand-drawn charts, CSV export and JSON backup/restore,
 the radial-hub home.
 
-Verified: the unit suite passes (82 tests, both variants), both APKs build, and the
+Verified: the unit suite passes (92 tests, both variants), both APKs build, and the
 screenshot renders were used to check every change to the artwork and the charts.
 
-Not verified: everything behavioural, and now rather more of it than last time. Nobody has
-yet confirmed on a device that the foreground service survives a long session, that the
-notification updates, or that the grace period fails a session correctly — and the three
-new flows (the planting window, the permission explanations, the mint chooser) have only
-been exercised by reading the code.
+Verified on hardware: the app has been installed and used on the owner's phone across
+three rounds of feedback, which is what produced every change below. The behavioural
+doubts that stood here in earlier revisions — whether the foreground service survives a
+long session, whether the notification updates, whether the grace period fails a session
+correctly — are resolved by use.
+
+Release signing is verified end to end: the Release workflow was run manually on `main`
+on 15 Oct, the keystore and all four secrets were picked up, and `apksigner` confirmed the
+signature. **No `v*` tag has been pushed**, so the publish step was skipped and the signed
+APK exists only as a workflow artifact, which sits behind an Actions login and expires.
+
+The one thing with neither automated coverage nor a deliberate check is whether the
+fifteen-second warning **makes a sound and pops over another app**. Posting it needs a real
+notification manager, which the unit suite has none of. Re-confirm it on a device after any
+change to the notification code.
 
 ## From the second device session
 
@@ -33,7 +43,7 @@ been exercised by reading the code.
 | "Study tip" wording | Kept, per the owner. Citations checked; two lines were wrong and were rewritten. |
 | Unlock order is fixed | Changed — a milestone now earns a *slot*, and the player picks which mint fills it. |
 | One plant grows forever | Fixed — a plant matures at twelve nodes and the next session starts another beside it. |
-| Grove art wrong against the reference | Rewritten — see `docs/SPEC-AMENDMENTS.md` §8.3 for the corrected table. |
+| Grove art wrong against the reference | Rewritten — see `docs/SPEC.md` §8.3 for the corrected table. |
 | Leaves grow singly | Fixed — one session is one node: a stem segment and an opposite pair, decussate, with branches from leaf axils. |
 | "Don't show again" belongs on the principles, not the permissions | Fixed — the principles now stand in front of the hub at every launch until dismissed, and stay readable at Settings → Mintal's principles. The permission notes keep their own, separate tick. |
 | Mid-session kill listed twice in Settings | Fixed — the *Device* card is gone; battery optimisation lives with the other permissions, once. |
@@ -81,12 +91,27 @@ session should not quietly re-propose them.
 
 ## Needs the owner before release
 
-- **The donation address.** `ui/settings/Donation.URL` is an empty string. Until it is
-  filled in, the Settings card renders with its button disabled and says so. One line to
-  change; no other code knows the URL.
-- **The spec document.** `docs/SPEC-AMENDMENTS.md` holds the rewritten §5.1, §5.6, §6,
-  §6.1, §8.3, §9, §4, §5.7 and §3.2 text, ready to fold into the spec in `reference/`.
-  That file is not in the repository, so a cloud session cannot edit it directly.
+- **A pushed tag.** Everything else about releasing works. `versionName` is `0.1.0` and
+  the workflow refuses a tag that disagrees with it, so `git tag v0.1.0 && git push origin
+  v0.1.0` publishes the signed APK as a GitHub release with no version bump needed. Until
+  then there is nothing an `fdroiddata` recipe can point at (§10.2 of the spec).
+- **The donation address.** `ui/settings/Donation.URL` is an empty string. The owner has
+  deferred this until there are testers to ask. Until it is filled in, the Settings card
+  renders with its button disabled and says so. One line to change; no other code knows
+  the URL.
+
+## Done since the third device session
+
+- **The spec is in the repository and the amendments are folded into it.** The owner
+  supplied spec v0.3, and `docs/SPEC.md` is now v0.4: every amendment is merged into the
+  section it belongs to, §13.1 records why each change was made, and
+  `docs/SPEC-AMENDMENTS.md` is deleted. Two of its entries were themselves out of date and
+  were folded in as the code actually behaves — §5.6's permanent wilted stub (failures are
+  `Hidden` by default now) and §5.4's "Save / Discard" buttons ("Save rating and note" and
+  "Skip"). Four §8 rows that had never matched the build were corrected at the same time:
+  Coil, the SVG build step and the Apache CSV dependency are gone, and Robolectric is
+  recorded as the way the UI is seen without a device.
+- **Merged to `main`.** `main` is at `ff1b43c` and carries everything.
 
 ## Open decisions
 
@@ -94,23 +119,30 @@ session should not quietly re-propose them.
   attachment, margin, surface, hairs, stem colour, flower form. They are legible at Grove
   size and correct against the reference sheet. The offer of commissioned illustration
   still stands, and the loader shape agreed earlier is unchanged: whole-plant raster for
-  the catalogue, one vector leaf per species for the Grove, falling back to drawing.
-- **Merging to `main`.** Still deliberately deferred until the app has been exercised.
-- **Signing.** Only debug APKs exist.
-- **Spanish.** Wanted. Still blocked on moving UI strings into `strings.xml`.
+  the catalogue, one vector leaf per species for the Grove, falling back to drawing. The
+  owner is going to ask about illustrators at UdeC. If one is commissioned, the licence
+  has to be free and recorded in `docs/CREDITS.md` or F-Droid cannot ship the art.
+- **Translation.** Deferred by the owner — no Spanish and no other language for now. The
+  prerequisite is unchanged if that changes: UI strings into `strings.xml` (only 9 are
+  there; roughly 68 literals are in Compose across 70 files). Not worth doing before it is
+  wanted, since its only consumer is translation.
 
 ## Next, in the order worth doing it
 
-1. Install this build and exercise the new flows: arm a session and cancel it; arm one
-   and let it run; refuse the notification permission and check a session still runs;
-   reach a milestone and pick a mint; fill a plant to twelve nodes and watch the next
-   session start a new one; and check that the second launch goes straight to the hub
-   with the principles still at Settings → Mintal's principles.
-2. Fill in the donation URL.
-3. UI strings into `strings.xml`, then the Spanish translation.
-4. Accessibility pass: TalkBack labels on hub tiles, chips and the mint chooser, contrast
-   in both palettes, touch targets. The specification calls this a release gate.
-5. Release signing, then a tagged release, then the `fdroiddata` recipe.
+1. **Accessibility pass.** The spec calls it a release gate (§8.2). It is in better shape
+   than earlier revisions of this file implied: there are no `contentDescription = null`
+   anywhere, every icon is labelled, the canvas-drawn parts (Grove, charts, growth track,
+   plant art) all carry descriptions, and a clickable `Surface` merges its text children,
+   so the hub tiles already announce as "Grove, 14 plants". What is left is verification
+   that needs a device: contrast at 4.5:1 in **both** palettes (light is the likelier to
+   have a thin spot, having been retuned once for the card-separation bug), 48dp touch
+   targets, and one TalkBack pass over hub → session → result → mint chooser.
+2. **Tag `v0.1.0`** and push it, which publishes the signed APK as a GitHub release.
+3. **The `fdroiddata` recipe** — a PR against F-Droid's own repository, not a commit here
+   (§10.2). Nothing blocks it except step 2.
+4. Fill in the donation URL, once there are testers to ask.
+5. Translation, if and when it is wanted.
+6. An illustrator, if the UdeC enquiry turns one up.
 
 ## Known gaps
 
@@ -119,7 +151,11 @@ session should not quietly re-propose them.
   sound has to be checked on a device.
 - No instrumented tests. The service, the database and the Compose screens have no
   automated coverage; unit tests cover the state machine, statistics, chart axes,
-  milestones, plant growth, Grove layout, CSV and time bucketing.
+  milestones, plant growth, Grove layout, CSV and time bucketing. For a solo project this
+  is a deliberate gap rather than an oversight: use on a real phone has caught more than
+  instrumented tests would have, and the screenshot renders cover the drawing code.
+- Gradle 8.14.3 warns that the build uses features incompatible with Gradle 9.0. Nothing
+  is broken; it is a chore waiting for whenever AGP forces the upgrade.
 - A session is held in memory by the controller. If the process is killed mid-session the
   session is lost; the foreground service makes this unlikely but not impossible.
 - The planting window lives in the hub's ViewModel, so it is deliberately cancelled by

@@ -6,14 +6,20 @@ the chat that built this project will not survive.
 ## What this is
 
 An Android focus timer built around real *Mentha* species, written from a product
-specification (v0.3). Local-first, GPL-3.0, aimed at F-Droid. Finish a focus session and
-it is grafted onto **the Grove**, one continuously growing mint network.
+specification. Local-first, GPL-3.0, aimed at F-Droid. Finish a focus session and it adds
+one **node** to a mint in **the Grove**, a bed of plants that is the record of your
+attention.
+
+The spec is in the repository at `docs/SPEC.md` (v0.4) and is the source of truth for
+behaviour. It was folded together from v0.3 plus three rounds of on-device feedback, so
+§13.1 is the place to look before re-proposing anything — several decisions there were
+made *against* the obvious option on purpose.
 
 ## Branch workflow
 
-- Develop on `ccr-d6d58d3f-dpo66a`. Push there.
-- `main` is deliberately untouched — the owner chose to keep the work on the branch until
-  the app has been exercised on a device. Do not merge to `main` without being asked.
+- Develop on `claude/mintal-remaining-work-bsmkbl`. Push there.
+- `main` now carries everything (`ff1b43c`): the owner merged it once the app had been
+  exercised on a device. Still do not merge to `main` without being asked.
 - Never force-push; never rewrite pushed history.
 
 ## Setting up a fresh cloud container
