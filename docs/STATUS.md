@@ -101,12 +101,15 @@ session should not quietly re-propose them.
 
 ## Needs the owner before release
 
-- **0.2.0 is prepared; publishing it is a merge and a tag.** `versionCode` 2,
-  `versionName` 0.2.0, "What's new" in `fastlane/metadata/android/en-US/changelogs/2.txt`.
-  The work has to reach `main` before it is tagged — tagging `main` as it stood would
-  publish the code of 15 October, without anything from the device rounds since. Then
-  `git tag v0.2.0` on `main` and `git push origin v0.2.0`; the workflow tests, signs,
-  verifies and publishes, with the changelog as the release notes.
+- **0.2.0 is on `main`; only the tag is missing, and it is the owner's to make.**
+  `versionCode` 2, `versionName` 0.2.0, "What's new" in
+  `fastlane/metadata/android/en-US/changelogs/2.txt`, merged as PR #4. A cloud session's
+  tag push is refused with HTTP 403, so the tag comes from the owner — most easily on
+  GitHub's website: Releases → *Draft a new release* → *Choose a tag*, type `v0.2.0`,
+  *Create new tag on publish*, target `main` → *Publish release*, description left
+  empty. The workflow then tests, signs, verifies and attaches the APK, and writes the
+  notes from the changelog. `git tag v0.2.0 && git push origin v0.2.0` on `main` does
+  the same.
 - **0.1.0 was never published.** A signed 0.1.0 (code 1) was built on 15 October by a
   manual workflow run and only ever existed as an artifact. The first public release is
   0.2.0 so that nothing can mistake one for the other.
@@ -207,7 +210,7 @@ session should not quietly re-propose them.
    have a thin spot, having been retuned once for the card-separation bug), 48dp touch
    targets, and one TalkBack pass over hub → session → result → mint chooser.
    0.2.0 goes out ahead of it, at the owner's call; the gate is still the gate.
-2. **Merge to `main` and tag `v0.2.0`** — see "Needs the owner before release".
+2. **Tag `v0.2.0`** — the owner's step, see "Needs the owner before release".
 3. **F-Droid**, per `docs/FDROID.md`: screenshots from a phone into
    `fastlane/metadata/android/en-US/images/phoneScreenshots/`, then either a Request For
    Packaging issue (no git) or a merge request to `fdroiddata` with the recipe there.

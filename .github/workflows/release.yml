@@ -1,13 +1,15 @@
 name: Release
 
 # Publishing a version is: bump versionCode and versionName in app/build.gradle.kts,
-# commit, then
+# write fastlane/metadata/android/en-US/changelogs/<versionCode>.txt, get it onto main,
+# and then either
 #
-#     git tag v0.2.0
-#     git push origin v0.2.0
+#     git tag v0.3.0
+#     git push origin v0.3.0
 #
-# This builds the signed APK and attaches it to a GitHub release named after the tag.
-# Nothing is published unless the tests pass and the APK really is signed.
+# or, with no git at all, publish a release on GitHub's website with a new tag v0.3.0
+# targeting main. Either way this builds the signed APK and attaches it to the release
+# named after the tag. No APK is attached unless the tests pass and it really is signed.
 #
 # It needs four repository secrets (Settings -> Secrets and variables -> Actions):
 #   MINTAL_KEYSTORE_BASE64    the keystore file, base64-encoded
@@ -22,7 +24,17 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # A release published on the website creates its tag there and then. Whether that
+  # also counts as a tag push has not been relied on: this trigger covers it either way,
+  # and the concurrency group below plus a publish step that tolerates an existing
+  # release make a double trigger cost a duplicate build, not a failure.
+  release:
+    types: [published]
   workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -139,9 +151,22 @@ jobs:
           on your device.
           NOTES
           } > "$NOTES_FILE"
-          gh release create "$GITHUB_REF_NAME" "$APK_PATH" \
-            --title "Mintal $GITHUB_REF_NAME" \
-            --notes-file "$NOTES_FILE"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            # Published from the website, or by the other trigger a moment ago: the
+            # release exists, so attach the APK to it. Words someone wrote there are kept;
+            # an empty description gets the changelog and the install notes.
+            gh release upload "$GITHUB_REF_NAME" "$APK_PATH" --clobber
+            BODY=$(gh release view "$GITHUB_REF_NAME" --json body --jq '.body // ""')
+            if [ -z "$BODY" ]; then
+              gh release edit "$GITHUB_REF_NAME" \
+                --title "Mintal $GITHUB_REF_NAME" \
+                --notes-file "$NOTES_FILE"
+            fi
+          else
+            gh release create "$GITHUB_REF_NAME" "$APK_PATH" \
+              --title "Mintal $GITHUB_REF_NAME" \
+              --notes-file "$NOTES_FILE"
+          fi
 
       # Also kept as a build artifact, so a workflow_dispatch run (no tag, no release)
       # still produces something installable to test with.

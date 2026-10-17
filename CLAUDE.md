@@ -221,10 +221,18 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 1. bump `versionCode` **and** `versionName` in `app/build.gradle.kts`;
 2. write `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (500 characters
    at most) — it is both F-Droid's "What's new" and the top of the GitHub release notes;
-3. get it onto `main`, and tag `main`: `git tag v0.3.0`, `git push origin v0.3.0`.
+3. get it onto `main`, and tag `main` — either `git tag v0.3.0`, `git push origin v0.3.0`,
+   or, with no git at all, **publish a release on GitHub's website** with a new tag
+   `v0.3.0` targeting `main`. The workflow attaches the signed APK to that release, and
+   fills in the notes from the changelog if the description was left empty.
 
 Tag what is on `main`, not a branch. The first release nearly went out from a `main` that
 was a week behind the code the owner had been testing.
+
+**A cloud session cannot create the tag.** Pushing a tag is refused with HTTP 403, while
+pushing this branch, opening a PR and merging it all work — so a session can carry a
+release all the way to a merged `main`, and the tag is always the owner's. The website
+route exists for exactly that hand-off. Do not retry the 403 or route around it.
 
 F-Droid is not part of this loop once it has accepted the app: its recipe watches tags.
 How to get it accepted the first time is in `docs/FDROID.md`.
