@@ -6,6 +6,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioManager
 import android.os.Build
@@ -27,6 +28,8 @@ import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.data.prefs.MintalSettings
 import dev.nheox.mintal.data.repository.AllowlistRepository
 import dev.nheox.mintal.data.species.SpeciesCatalog
+import dev.nheox.mintal.domain.session.AwaySignals
+import dev.nheox.mintal.domain.session.DistractionPolicy
 import dev.nheox.mintal.domain.session.SessionController
 import dev.nheox.mintal.domain.session.SessionRules
 import kotlinx.coroutines.CoroutineScope
@@ -71,9 +74,21 @@ class FocusSessionService : Service() {
     private var speciesNames: Map<String, String> = emptyMap()
     private var implicitlyAllowed: Set<String> = emptySet()
 
+    /**
+     * The last app the usage log saw come to the front. Sticky on purpose: the log records
+     * a *switch*, not a state, so an app that has been in front for a while has no recent
+     * event at all. Reading "no event in the last few seconds" as "nothing in front" meant
+     * anyone who opened one app and stayed in it had their grace period cleared before it
+     * could run out, and was never caught.
+     */
+    private var lastAppInFront: String? = null
+
     private val processObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             appInForeground = true
+            // Whatever was in front before Mintal came back is history. If the next switch
+            // away goes unrecorded, this makes it read as Mintal rather than as stale news.
+            lastAppInFront = packageName
         }
 
         override fun onStop(owner: LifecycleOwner) {
@@ -180,28 +195,27 @@ class FocusSessionService : Service() {
         }
     }
 
-    /**
-     * Layer A is enough on its own (spec §5.3): the app lost the foreground. Layer B, when
-     * the user has granted it, keeps an allowlisted app from starting the countdown at all.
-     * A dark screen and a phone call never count as leaving.
-     */
+    /** Gathers what Android will say; [DistractionPolicy] decides what it means. */
     private fun isUserAway(): Boolean {
-        if (!settings.detectLeavingApp) return false
-        if (appInForeground) return false
-        if (!isScreenOn()) return false
-        if (isDeviceLocked()) return false
-        if (isInCall()) return false
-        if (settings.detectForegroundApp && UsageAccess.isGranted(this)) {
-            val foreground = currentForegroundPackage()
-            if (foreground == null ||
-                foreground == packageName ||
-                foreground in allowedPackages ||
-                foreground in implicitlyAllowed
-            ) {
-                return false
-            }
-        }
-        return true
+        val canSeeAppInFront = settings.detectForegroundApp && UsageAccess.isGranted(this)
+        val screenOn = isScreenOn()
+        val locked = isDeviceLocked()
+        val signals = AwaySignals(
+            detectionOn = settings.detectLeavingApp,
+            mintalInFront = appInForeground,
+            screenOn = screenOn,
+            deviceLocked = locked,
+            inCall = isInCall(),
+            canSeeAppInFront = canSeeAppInFront,
+            // The usage log is only worth reading when its answer could matter, which
+            // keeps a long session with the screen off from querying it twice a second.
+            appInFront = if (canSeeAppInFront && !appInForeground && screenOn && !locked) {
+                currentForegroundPackage()
+            } else {
+                null
+            },
+        )
+        return DistractionPolicy.isAway(signals, permitted = implicitlyAllowed + allowedPackages)
     }
 
     private fun isScreenOn(): Boolean {
@@ -229,36 +243,35 @@ class FocusSessionService : Service() {
         return audio.mode != AudioManager.MODE_NORMAL
     }
 
+    /** The newest switch in the recent log, or the last one seen if there is none. */
     private fun currentForegroundPackage(): String? {
         val usage = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-            ?: return null
+            ?: return lastAppInFront
         val now = clock.nowMillis()
         val events = runCatching { usage.queryEvents(now - FOREGROUND_LOOKBACK_MILLIS, now) }
-            .getOrNull() ?: return null
-        var latest: String? = null
+            .getOrNull() ?: return lastAppInFront
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
             if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                latest = event.packageName
+                lastAppInFront = event.packageName
             }
         }
-        return latest
+        return lastAppInFront
     }
 
     /**
      * System surfaces that are always permitted (spec §5.3).
      *
-     * The test is not "is this app harmless" but **did the user choose to go somewhere
-     * else**. The lock screen, the notification shade, the recents switcher and a
-     * permission dialog all appear over whatever you were doing, often without being
-     * asked for; the keyboard is part of using an app rather than leaving it; and a call
-     * or an alarm arrives on its own schedule. None of those is a decision to stop
-     * focusing, so none of them fails a session.
+     * The test is not "is this app harmless" but **is the user using something else**.
+     * The lock screen, the notification shade, the recents switcher and a permission
+     * dialog all appear over whatever you were doing, often without being asked for; the
+     * keyboard is part of using an app rather than leaving it; a call or an alarm arrives
+     * on its own schedule; and the home screen is where you are when you are not using
+     * any app at all. None of those is a decision to stop focusing.
      *
-     * The camera, the browser, the gallery and the launcher are deliberately **not** here.
-     * Opening one is a decision to go elsewhere, which is exactly what Mintal is for
-     * noticing — and the user who asked for this said so in the same breath.
+     * The camera, the browser and the gallery are deliberately **not** here. Opening one
+     * is a decision to use something else, which is exactly what Mintal is for noticing.
      */
     private fun resolveImplicitlyAllowedPackages(): Set<String> {
         val resolved = HashSet<String>()
@@ -277,6 +290,16 @@ class FocusSessionService : Service() {
                 ?.substringBefore('/')
         }.getOrNull()
         if (!ime.isNullOrBlank()) resolved += ime
+
+        // Every installed home screen, not just the default: the user may have more than
+        // one, and with no default chosen Android shows its own picker in between.
+        val homes = runCatching {
+            packageManager.queryIntentActivities(
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+                PackageManager.MATCH_ALL,
+            ).mapNotNull { it.activityInfo?.packageName }
+        }.getOrDefault(emptyList())
+        resolved += homes
 
         resolved += listOf(
             // The lock screen, the shade, recents, the power menu: one package, and the

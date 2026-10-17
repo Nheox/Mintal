@@ -24,7 +24,8 @@ data class RunningSession(
     val graceRemainingSeconds: Int?,
     /** Seconds left of a pause, or null when the session is running normally. */
     val pauseRemainingSeconds: Int? = null,
-    val pausesLeft: Int = SessionRules.PAUSES_PER_SESSION,
+    /** Seconds until another pause may be taken, or null when one is available now. */
+    val pauseCooldownSeconds: Int? = null,
 ) {
     val remainingSeconds: Int
         get() = (plannedSeconds - elapsedSeconds).coerceAtLeast(0)
@@ -41,7 +42,7 @@ data class RunningSession(
 
     val isPaused: Boolean get() = pauseRemainingSeconds != null
 
-    val canPause: Boolean get() = !isPaused && pausesLeft > 0
+    val canPause: Boolean get() = !isPaused && pauseCooldownSeconds == null
 }
 
 /** What happened when a session ended, so the result screen can say it once. */
@@ -77,7 +78,7 @@ class SessionController @Inject constructor(
     private var distracted = false
     private var pausedAtElapsed: Long? = null
     private var pausedTotalMillis = 0L
-    private var pausesUsed = 0
+    private var pauseEndedElapsed: Long? = null
 
     private val _running = MutableStateFlow<RunningSession?>(null)
     val running: StateFlow<RunningSession?> = _running.asStateFlow()
@@ -94,7 +95,7 @@ class SessionController @Inject constructor(
         distracted = false
         pausedAtElapsed = null
         pausedTotalMillis = 0L
-        pausesUsed = 0
+        pauseEndedElapsed = null
         _result.value = null
         _running.value = RunningSession(
             mode = mode,
@@ -140,23 +141,28 @@ class SessionController @Inject constructor(
      */
     fun pause() {
         val current = _running.value ?: return
-        if (pausedAtElapsed != null || pausesUsed >= SessionRules.PAUSES_PER_SESSION) return
-        pausesUsed += 1
-        pausedAtElapsed = clock.elapsedRealtimeMillis()
+        val now = clock.elapsedRealtimeMillis()
+        if (pausedAtElapsed != null || cooldownRemainingAt(now) != null) return
+        pausedAtElapsed = now
         distracted = false
         graceStartedElapsed = null
         _running.value = current.copy(
             graceRemainingSeconds = null,
             pauseRemainingSeconds = SessionRules.PAUSE_SECONDS,
-            pausesLeft = SessionRules.PAUSES_PER_SESSION - pausesUsed,
+            pauseCooldownSeconds = null,
         )
     }
 
-    /** Resume early, or automatically once the pause runs out. */
+    /**
+     * Resume early, or automatically once the pause runs out. Either way the next pause
+     * waits [SessionRules.PAUSE_COOLDOWN_SECONDS], counted from this moment.
+     */
     fun resume() {
         val pausedAt = pausedAtElapsed ?: return
-        pausedTotalMillis += (clock.elapsedRealtimeMillis() - pausedAt).coerceAtLeast(0L)
+        val now = clock.elapsedRealtimeMillis()
+        pausedTotalMillis += (now - pausedAt).coerceAtLeast(0L)
         pausedAtElapsed = null
+        pauseEndedElapsed = now
         // The user may still be outside the app at this moment. Starting them mid-grace
         // would fail a session the very second its pause expired, so the next tick's
         // setDistracted is what re-arms the countdown, from zero.
@@ -165,6 +171,7 @@ class SessionController @Inject constructor(
         _running.value = _running.value?.copy(
             graceRemainingSeconds = null,
             pauseRemainingSeconds = null,
+            pauseCooldownSeconds = SessionRules.PAUSE_COOLDOWN_SECONDS,
         )
     }
 
@@ -180,6 +187,7 @@ class SessionController @Inject constructor(
                     elapsedSeconds = elapsedSecondsAt(now),
                     graceRemainingSeconds = null,
                     pauseRemainingSeconds = SessionRules.PAUSE_SECONDS - pausedFor,
+                    pauseCooldownSeconds = null,
                 )
                 return
             }
@@ -213,6 +221,7 @@ class SessionController @Inject constructor(
                 (SessionRules.GRACE_SECONDS - ((now - it) / 1000L).toInt()).coerceAtLeast(0)
             },
             pauseRemainingSeconds = null,
+            pauseCooldownSeconds = cooldownRemainingAt(now),
         )
     }
 
@@ -234,6 +243,13 @@ class SessionController @Inject constructor(
     }
 
     private fun elapsedSecondsNow(): Int = elapsedSecondsAt(clock.elapsedRealtimeMillis())
+
+    /** Whole seconds until the next pause is allowed, or null once it is. */
+    private fun cooldownRemainingAt(now: Long): Int? {
+        val endedAt = pauseEndedElapsed ?: return null
+        val left = SessionRules.PAUSE_COOLDOWN_SECONDS - ((now - endedAt) / 1000L).toInt()
+        return left.takeIf { it > 0 }
+    }
 
     /** Wall time since the session started, less whatever of it was spent paused. */
     private fun elapsedSecondsAt(now: Long): Int {

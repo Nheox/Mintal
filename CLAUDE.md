@@ -183,6 +183,16 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
   fate of the rating and the note and nothing else, which is why they are called "Save
   rating and note" and "Skip" — they were "Save" and "Discard", and "Discard" read as
   "throw this session away", the one thing it has never done.
+- `PowerManager.isInteractive` is false only while the device is *asleep*. The lock screen
+  is interactive, so "screen off never fails a session" checked that way still failed
+  everyone who woke their phone to look at the time. `KeyguardManager.isKeyguardLocked`
+  is the check for "locked", and a locked phone is never someone using another app.
+- The usage-events log records **switches, not states**. "No foreground event in the
+  last N seconds" means "nobody switched", not "nothing is in front" — read it the second
+  way and anyone who opens one app and stays in it is never caught, which is what layer B
+  did while its window (10 s) was shorter than the grace period (15 s). The last app seen
+  in front is sticky in `FocusSessionService`, and `DistractionPolicy` makes the decision
+  where `DistractionPolicyTest` can see it.
 - A tappable box hand-rolled beside `SectionCard` comes out with its own padding and no
   border, and 2dp of difference is invisible in review and obvious on a phone — that is how
   the hub's Mint and Tag boxes ended up visibly tighter than their neighbours. `SectionCard`

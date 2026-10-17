@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nheox.mintal.core.model.SessionMode
 import dev.nheox.mintal.core.time.MintalTime
 import dev.nheox.mintal.domain.session.SessionResult
+import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SpeciesEmblem
 import dev.nheox.mintal.ui.components.SessionBar
@@ -157,7 +158,9 @@ fun SessionRunningScreen(
                         )
                         Text(
                             text = "The clock is stopped and leaving Mintal is safe. " +
-                                "The session carries on by itself when the pause runs out.",
+                                "The session carries on by itself when the pause runs out, " +
+                                "and the next pause is available " +
+                                "${SessionRules.PAUSE_COOLDOWN_SECONDS} seconds after that.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -210,11 +213,20 @@ fun SessionRunningScreen(
                 ) { Text("Stop and keep it") }
             }
 
+            val cooldown = running?.pauseCooldownSeconds
             if (running?.canPause == true) {
                 OutlinedButton(
                     onClick = { viewModel.pause() },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Pause for 2 minutes") }
+                ) { Text("Pause for ${SessionRules.PAUSE_SECONDS / 60} minutes") }
+            } else if (cooldown != null) {
+                // Shown disabled rather than hidden, so the button does not jump the
+                // layout when it comes back, and the wait is visible rather than a mystery.
+                OutlinedButton(
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Pause again in ${cooldown}s") }
             }
 
             OutlinedButton(

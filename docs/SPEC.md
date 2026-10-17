@@ -372,7 +372,8 @@ and it is deliberately scoped to the hub.
 
 #### 5.2.1 The pause
 
-One session may be paused **once**, for **two minutes**. While it is paused:
+A session may be paused for **two minutes** at a time, with **thirty seconds** between
+the end of one pause and the start of the next. While it is paused:
 
 - the clock stops, and paused time is subtracted from the session's elapsed total, so a
   paused 25-minute countdown ends two minutes later rather than two minutes short;
@@ -386,10 +387,16 @@ When a pause expires while the user is still outside the app, the grace period o
 starts again **from zero** rather than resuming mid-count. Failing a session in the same
 instant its pause ran out would be the cruellest possible reading of the rule.
 
-**Once per session is deliberate**, and it is the whole design of this feature. A pause
-that can be taken whenever makes §5.3 optional, and §5.3 is the only rule Mintal has;
-one pause is enough to answer a door or take a call the dialler exemption does not cover,
-and not enough to use the phone through a session.
+**The gap between pauses is the design of this feature.** Back-to-back pauses would
+make §5.3 optional, and §5.3 is the only rule Mintal has. When a pause ends, the Pause
+button stays on screen, disabled, counting down *Pause again in 30s*, and comes back when
+the count reaches zero. Shown rather than hidden, so the layout does not jump and the wait
+is visible rather than a mystery.
+
+The first version allowed **one pause per session**. On a device that was right for a
+short block and too few for a long one, and the owner asked for the count instead. It is
+safe to be this generous because paused time never counts (below): pausing can only make
+a session longer, never easier.
 
 Paused time is not focus time. It does not count toward the session, toward statistics,
 or toward a milestone, and giving up during a pause records only the focused seconds.
@@ -415,6 +422,17 @@ experiment, not a v1 feature — see §11.6.
   is the user Mintal is built for.
 - Layer B adds the allowlist: the grace period is skipped when the foreground app is
   permitted, so checking a dictionary doesn't kill a session.
+- **Layer A cannot tell the home screen from another app, and does not pretend to.**
+  Android tells Mintal that it lost the foreground and nothing about what took it, so
+  standing on the home screen and scrolling a feed look identical and both start the
+  grace period. Telling them apart is precisely what layer B is for.
+- **Under layer B, the app in front is the last one the system recorded coming to the
+  front, however long ago.** The usage log records *switches*, not states, so an app that
+  has been in front for a while has no recent entry at all. The first implementation read
+  "no switch in the last ten seconds" as "nothing in front" — and since that window was
+  shorter than the fifteen-second grace period, anyone who opened one app and stayed in it
+  had their countdown cleared before it could run out. Layer B caught app-*hopping* and
+  nothing else.
 - Incoming phone calls never fail a session.
 - **Screen-off never fails a session, and neither does the lock screen.** These are two
   different states and conflating them was a real bug: `PowerManager.isInteractive` is
@@ -426,14 +444,15 @@ experiment, not a v1 feature — see §11.6.
   by something else.
 - The allowlist is user-editable and starts empty. A set of **system surfaces is always
   implicitly permitted**, and the test for membership is not "is this app harmless" but
-  **did the user choose to go somewhere else**: the lock screen and the rest of SystemUI
-  (the notification shade, recents, the power menu), the default dialler and telecom,
-  system settings, the keyboard actually in use, permission and installer dialogs, and
-  the clock app that owns alarms. Each of those appears over what you were doing, often
-  without being asked for, or is part of using an app rather than leaving it.
-- The camera, the browser, the gallery and the launcher are deliberately **not** on that
-  list. Opening one is a decision to go elsewhere, which is the decision Mintal exists to
-  notice. Anything a particular person wants exempted goes in their own allowlist.
+  **is the user using something else**: the lock screen and the rest of SystemUI (the
+  notification shade, recents, the power menu), every installed home screen, the default
+  dialler and telecom, system settings, the keyboard actually in use, permission and
+  installer dialogs, and the clock app that owns alarms. Each of those appears over what
+  you were doing, is part of using an app rather than leaving it, or — the home screen —
+  is where you are when you are not using any app at all.
+- The camera, the browser and the gallery are deliberately **not** on that list. Opening
+  one is a decision to use something else, which is the decision Mintal exists to notice.
+  Anything a particular person wants exempted goes in their own allowlist.
 
 **The warning is a second notification on a second channel, and has to be.** The
 running-session notification is deliberately `IMPORTANCE_LOW` and silent, which is right
@@ -633,7 +652,7 @@ x axis.
 | Default duration | 25 min |
 | Planting window after START | 5 s, cancellable, nothing written (§5.1.1) |
 | Grace period after leaving | 15 s, with a visible warning |
-| Pause | 2 min, once per session, clock stopped (§5.2.1) |
+| Pause | 2 min, clock stopped, then 30 s before the next (§5.2.1) |
 | Nodes earned per successful session | 1, whatever its length (§5.6) |
 | Plant maturity | 12 nodes, then a new plant beside it (§5.6) |
 | Session rating | 1–5, optional, editable later |
@@ -1346,10 +1365,20 @@ section it changed.
   too literal a reading of "the system dialler and system settings". The principle it was
   reaching for is that a surface which appears *over* your work, unbidden, is not a
   decision to stop working — and that principle also says the camera stays off the list.
+  The home screen joined it a round later, from a device: being on it is not using
+  anything, and the first list had excluded it on the wrong test ("did you go somewhere
+  else" rather than "are you using something else").
 - **A two-minute pause (§5.2.1).** The honest gap in §5.3: everything it exempts is
   something happening *to* the user — a call, an alarm, a dark screen — and nothing
   covers simply needing two minutes. Give Up was the only exit, and it costs the session.
-  Once per session is what keeps it from undoing §5.3 altogether.
+  It shipped as once per session and became a thirty-second gap between pauses after use
+  on a device: one pause was right for a short block and too few for a long one.
+- **Layer B was only catching app-hopping (§5.3).** Its lookup read the last ten seconds
+  of the usage log, which records switches rather than states, and treated an empty
+  window as "nothing in front". Ten seconds is shorter than the fifteen-second grace
+  period, so staying in one app cleared the countdown before it ran out. Found while
+  answering a device report about the home screen, and fixed in the same change, because
+  fixing the lookup alone would have made the home screen fail sessions under layer B.
 - **The catalogue layout became a preference (§5.1, §7).** It was a `rememberSaveable`
   inside the screen, which survives rotation and is thrown away the moment the screen
   leaves the back stack — so choosing Cards lasted exactly until you went back to the

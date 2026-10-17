@@ -18,11 +18,12 @@ object SessionRules {
     const val PAUSE_SECONDS = 120
 
     /**
-     * How many times one session may be paused. One, deliberately: a pause that can be
-     * taken whenever makes the grace period of §5.3 optional, and with it the only rule
-     * the app actually has.
+     * After a pause ends, the next one waits this long (spec §5.2.1), with the wait counted
+     * down on the button. Back-to-back pauses would make the grace period of §5.3 optional;
+     * a gap keeps a pause something you take, not a state you live in. Paused time never
+     * counts as focus, so pausing can only make a session longer, never easier.
      */
-    const val PAUSES_PER_SESSION = 1
+    const val PAUSE_COOLDOWN_SECONDS = 30
 
     /**
      * A session is armed, not started, for this long after START is pressed. Nothing is

@@ -316,15 +316,50 @@ class SessionControllerTest {
     }
 
     @Test
-    fun `a session can be paused only once`() = runTest {
+    fun `the next pause waits thirty seconds after the last one ended`() = runTest {
         controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
         controller.pause()
-        assertEquals(0, controller.running.value?.pausesLeft)
+        clock.advanceSeconds(20)
         controller.resume()
+        assertEquals(SessionRules.PAUSE_COOLDOWN_SECONDS, controller.running.value?.pauseCooldownSeconds)
         assertEquals(false, controller.running.value?.canPause)
 
         controller.pause()
-        assertEquals(false, controller.running.value?.isPaused, "the second pause is refused")
+        assertEquals(false, controller.running.value?.isPaused, "refused during the cooldown")
+
+        clock.advanceSeconds(SessionRules.PAUSE_COOLDOWN_SECONDS - 1L)
+        controller.tick()
+        assertEquals(1, controller.running.value?.pauseCooldownSeconds)
+
+        clock.advanceSeconds(1)
+        controller.tick()
+        assertNull(controller.running.value?.pauseCooldownSeconds)
+        assertEquals(true, controller.running.value?.canPause)
+
+        controller.pause()
+        assertEquals(true, controller.running.value?.isPaused, "available again")
+    }
+
+    @Test
+    fun `a pause that runs out by itself starts the cooldown too`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+        controller.tick()
+
+        assertEquals(false, controller.running.value?.isPaused)
+        assertEquals(SessionRules.PAUSE_COOLDOWN_SECONDS, controller.running.value?.pauseCooldownSeconds)
+    }
+
+    @Test
+    fun `a fresh session can pause straight away`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        controller.resume()
+        controller.giveUp()
+
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        assertEquals(true, controller.running.value?.canPause, "a cooldown does not outlive its session")
     }
 
     @Test

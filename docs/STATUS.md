@@ -119,16 +119,28 @@ session should not quietly re-propose them.
   keyguard is interactive, so a woken lock screen, an always-on display and lift-to-wake
   all read as leaving the app. A locked device is now checked explicitly.
 - **The implicit allowlist covers the system surfaces.** SystemUI (lock screen, shade,
-  recents), telecom, settings, the keyboard in use, permission and installer dialogs, and
-  the clock app. The camera, browser, gallery and launcher are deliberately excluded —
-  opening one is a decision to go elsewhere. Note this list only takes effect when the
-  user has turned on detection layer B, which is off by default; the lock-screen fix above
-  is in layer A and applies to everyone.
-- **A two-minute pause.** One per session, clock stopped, leaving the app harmless while
-  it runs, auto-resuming when it expires. Paused time is subtracted from the session, so a
-  paused countdown ends later rather than early, and a pause expiring while the user is
-  still away restarts the grace period from zero rather than failing instantly. Seven new
-  tests in `SessionControllerTest`.
+  recents), every installed home screen, telecom, settings, the keyboard in use,
+  permission and installer dialogs, and the clock app. The camera, browser and gallery are
+  deliberately excluded — opening one is using something else. The home screen was
+  excluded too at first and was added after a device report; the manifest gained a
+  `<queries>` entry for `CATEGORY_HOME`, a visibility declaration and not a permission.
+  This list only takes effect under detection layer B, which is off by default.
+- **Layer B was only catching app-hopping, and now catches staying.** It read the last ten
+  seconds of the usage log and treated an empty window as "nothing in front", but the log
+  records switches, not states, and ten seconds is shorter than the grace period — so
+  opening one app and staying in it cleared the countdown before it ran out. The last app
+  seen in front is now sticky, and reset to Mintal whenever Mintal comes back.
+- **The away decision is a pure function**, `DistractionPolicy`, in `domain/session/`,
+  with every exemption pinned by name in `DistractionPolicyTest` — including the
+  limitation, that without Usage Access the home screen cannot be told from an app. The
+  service only gathers the signals.
+- **A two-minute pause, with thirty seconds between pauses.** Clock stopped, leaving the
+  app harmless while it runs, auto-resuming when it expires. When a pause ends, the button
+  stays on screen disabled and counts down "Pause again in 30s". It first shipped as once
+  per session; the owner asked for the count after using it. Paused time is subtracted
+  from the session, so a paused countdown ends later rather than early, and a pause
+  expiring while the user is still away restarts the grace period from zero rather than
+  failing instantly.
 - **The Give Up dialog stopped describing a wilted sprig in the Grove**, which failures
   have not left by default since the third device round.
 - **The species catalogue remembers its layout.** Choosing Cards used to last until the
@@ -186,3 +198,13 @@ session should not quietly re-propose them.
   leaving the hub. That is the intended behaviour, not a limitation, but it does mean the
   window cannot survive a process death — which costs nothing, since nothing was written.
 - UI strings are hardcoded, so the app cannot be translated yet.
+- **Without Usage Access, the home screen fails a session like any app does.** Android
+  gives layer A no way to tell them apart. This is the one remaining case of "my plant
+  died and I didn't open anything", and the answer to it is turning layer B on.
+- The running screen, and so the pause button and its countdown, has no screenshot
+  coverage: `SessionRunningScreen` calls `hiltViewModel()` itself. Extracting a
+  `SessionRunningContent` the way `SpeciesContent` is would fix that.
+- Once, on the first cold run of a fresh session, every Robolectric test failed with
+  `UnsatisfiedLinkError` from `org.robolectric.nativeruntime` — the native graphics
+  library never loaded. Re-running passed, in isolation and in full, with no change.
+  Not seen in CI. If it recurs, the cause is the environment, not the test that names it.
