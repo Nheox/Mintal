@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-17, after preparing the 0.2.0 release.
+Last updated: 2026-10-17, after publishing 0.2.0 and checking it reproduces.
 
 ## Where the project stands
 
@@ -21,8 +21,14 @@ correctly — are resolved by use.
 
 Release signing is verified end to end: the Release workflow was run manually on `main`
 on 15 Oct, the keystore and all four secrets were picked up, and `apksigner` confirmed the
-signature. **No `v*` tag has been pushed**, so the publish step was skipped and the signed
-APK exists only as a workflow artifact, which sits behind an Actions login and expires.
+signature. **0.2.0 is published**: the owner made the release on GitHub's website on 17 Oct,
+with tag `v0.2.0` on `e8e40bf`, and the workflow attached the signed APK. Publishing from
+the website fired *both* triggers, the release and the tag push; the second run re-uploaded
+the APK over the first, as designed. The release is marked as a pre-release.
+
+The build is reproducible: `v0.2.0` rebuilt from a fresh clone matches the published APK
+byte for byte once its signature is copied over. How it was checked, and what could break
+it, is in `docs/FDROID.md`.
 
 The one thing with neither automated coverage nor a deliberate check is whether the
 fifteen-second warning **makes a sound and pops over another app**. Posting it needs a real
@@ -101,15 +107,8 @@ session should not quietly re-propose them.
 
 ## Needs the owner before release
 
-- **0.2.0 is on `main`; only the tag is missing, and it is the owner's to make.**
-  `versionCode` 2, `versionName` 0.2.0, "What's new" in
-  `fastlane/metadata/android/en-US/changelogs/2.txt`, merged as PR #4. A cloud session's
-  tag push is refused with HTTP 403, so the tag comes from the owner — most easily on
-  GitHub's website: Releases → *Draft a new release* → *Choose a tag*, type `v0.2.0`,
-  *Create new tag on publish*, target `main` → *Publish release*, description left
-  empty. The workflow then tests, signs, verifies and attaches the APK, and writes the
-  notes from the changelog. `git tag v0.2.0 && git push origin v0.2.0` on `main` does
-  the same.
+- **The F-Droid merge request.** The recipe in `docs/FDROID.md` is ready to submit as it
+  stands, reproducible build included. It is the owner's to open, from a GitLab account.
 - **0.1.0 was never published.** A signed 0.1.0 (code 1) was built on 15 October by a
   manual workflow run and only ever existed as an artifact. The first public release is
   0.2.0 so that nothing can mistake one for the other.
@@ -210,14 +209,13 @@ session should not quietly re-propose them.
    have a thin spot, having been retuned once for the card-separation bug), 48dp touch
    targets, and one TalkBack pass over hub → session → result → mint chooser.
    0.2.0 goes out ahead of it, at the owner's call; the gate is still the gate.
-2. **Tag `v0.2.0`** — the owner's step, see "Needs the owner before release".
-3. **F-Droid**, per `docs/FDROID.md`: screenshots from a phone into
-   `fastlane/metadata/android/en-US/images/phoneScreenshots/`, then either a Request For
-   Packaging issue (no git) or a merge request to `fdroiddata` with the recipe there.
-   Nothing blocks it except step 2.
-4. Fill in the donation URL, once there are testers to ask.
-5. Translation, if and when it is wanted.
-6. An illustrator, if the UdeC enquiry turns one up.
+2. **F-Droid**, per `docs/FDROID.md`: the merge request to `fdroiddata` with the recipe
+   there. Separately, screenshots from a phone into
+   `fastlane/metadata/android/en-US/images/phoneScreenshots/` and a 512×512
+   `images/icon.png`, which reach the listing with the next tagged release.
+3. Fill in the donation URL, once there are testers to ask.
+4. Translation, if and when it is wanted.
+5. An illustrator, if the UdeC enquiry turns one up.
 
 ## Known gaps
 
