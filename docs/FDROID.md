@@ -66,8 +66,8 @@ the recipe, and a reviewer takes it from there. Faster, but it is a git workflow
 
 ```yaml
 Categories:
-  - Timer
   - Time Tracker
+  - Timer
 License: GPL-3.0-only
 AuthorName: Nheox
 SourceCode: https://github.com/Nheox/Mintal
@@ -109,6 +109,10 @@ Notes on the recipe:
 - **`Time` is no longer a category.** F-Droid replaced its category list;
   `Timer` and `Time Tracker` are from the current one (`config/categories.yml` in
   `fdroiddata`, checked 17 Oct 2026).
+- **The merge request's first CI job is `fdroid rewritemeta`**, and it fails on
+  formatting alone. The first submission failed on two things: categories must be in
+  sorted order (`Time Tracker` before `Timer`, because a space sorts before a letter), and
+  the file must end with a newline.
 - **`GPL-3.0-only`** because that is what the repository says: `GPL-3.0` with no "or any
   later version". If the owner would rather allow later versions of the GPL, the README
   and a licence notice have to say so first, and then this becomes `GPL-3.0-or-later`.
