@@ -88,6 +88,16 @@ session should not quietly re-propose them.
   prepared and then removed: the owner is not submitting yet, and scaffolding that sits
   unused for months goes stale and gets submitted stale. Worth redoing when the app is
   actually ready to go out, against whatever F-Droid's requirements are then.
+- **Usage Access on by default, or nudging toward it.** Offered after the home-screen
+  report, along with making leaving harmless without it. The owner chose to keep it as
+  it is: Usage Access sees every app you open, which for this app is a tracker, and the
+  default build stays at the permissions nobody can avoid. The home screen therefore
+  counts as leaving by default, knowingly.
+- **Returning to the hub during a pause to change settings.** Asked as an either/or
+  against changing the tag during a session; the tag was built instead (spec §5.2). The
+  hub would have to understand a half-finished session to offer the one change that is
+  safe to make, and the planting window already covers correcting the rest before a
+  session starts.
 
 ## Needs the owner before release
 
@@ -141,6 +151,14 @@ session should not quietly re-propose them.
   from the session, so a paused countdown ends later rather than early, and a pause
   expiring while the user is still away restarts the grace period from zero rather than
   failing instantly.
+- **The tag can be changed during a session.** The running screen's tag chip is always
+  shown now (as "Add a tag" when there is none) and opens the same picker as the hub,
+  extracted into `ui/components/TagPickerDialog.kt` so the two cannot drift. Only this
+  session's tag changes; the hub's choice for the next one is left alone. The chip used to
+  have an empty click handler. Two tests in `SessionControllerTest`.
+- **The Usage Access switch is disabled while "Fail a session if I leave the app" is
+  off**, and says why. Layer B only refines layer A, so with layer A off it did nothing,
+  while looking switchable — which is how it was tested on a device and reported broken.
 - **The Give Up dialog stopped describing a wilted sprig in the Grove**, which failures
   have not left by default since the third device round.
 - **The species catalogue remembers its layout.** Choosing Cards used to last until the
@@ -199,8 +217,10 @@ session should not quietly re-propose them.
   window cannot survive a process death — which costs nothing, since nothing was written.
 - UI strings are hardcoded, so the app cannot be translated yet.
 - **Without Usage Access, the home screen fails a session like any app does.** Android
-  gives layer A no way to tell them apart. This is the one remaining case of "my plant
-  died and I didn't open anything", and the answer to it is turning layer B on.
+  gives layer A no way to tell them apart. Accepted by the owner rather than worked
+  around — see "Decided against" — and stated in the Settings copy so it is not a surprise.
+- The tag picker dialog has no screenshot coverage either: an `AlertDialog` draws in its
+  own window, and `ScreenshotRenderer` draws the activity's decor view only.
 - The running screen, and so the pause button and its countdown, has no screenshot
   coverage: `SessionRunningScreen` calls `hiltViewModel()` itself. Extracting a
   `SessionRunningContent` the way `SpeciesContent` is would fix that.

@@ -225,6 +225,17 @@ class SessionController @Inject constructor(
         )
     }
 
+    /**
+     * Retag the running session (spec §5.2). The tag is the one setting that is only a
+     * label: it moves no clock, grows no other plant and earns nothing, and it can already
+     * be edited afterwards in Session detail. The duration, the mode and the mint are what
+     * the session *is*, and stay as they were when it started.
+     */
+    fun setTag(tagId: Long?) {
+        val current = _running.value ?: return
+        _running.value = current.copy(tagId = tagId)
+    }
+
     /** The user confirmed Give Up (spec §5.2). */
     suspend fun giveUp() {
         if (_running.value == null) return

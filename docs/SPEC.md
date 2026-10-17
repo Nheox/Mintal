@@ -363,8 +363,23 @@ and it is deliberately scoped to the hub.
   techniques highlighting and re-reading rated lowest and self-testing highest. Chi et
   al. (1994) is about *understanding* rather than retention, and the line now says so.
   A cited claim that misreports its source is worse than no claim.
-- The tag is shown; a **Give Up** button is present, with a brief confirmation (this
+- The tag is shown, and **can be changed while the session runs** — or added, if the
+  session started without one — from the same picker the hub uses, including creating a
+  new tag on the spot. A **Give Up** button is present, with a brief confirmation (this
   is the "warning before failure" principle 6 calls for) rather than an instant exit.
+- **The tag is the only setting that changes once a session is running.** It is a label:
+  it moves no clock, grows no other plant and earns nothing, and Session detail already
+  lets it be edited afterwards, so allowing it during is only consistent. The duration,
+  the mode and the mint are what the session *is*. Changing them midway has no honest
+  answer — a 50-minute countdown cut to 25 after 30 minutes is already over; a node
+  belongs to one mint, not to whichever was chosen last — and the place for "wait, not
+  that" already exists: the five-second planting window of §5.1.1. Retagging leaves the
+  hub's choice for the *next* session alone; correcting one session is not a statement
+  about the one after it.
+- Returning to the hub during a pause to change settings was considered and not built.
+  It needs a hub that knows a session is half-done — a START button that must not start,
+  a planting window that must not arm — to buy the one change that is safe to make, and
+  that change is now one tap on the running screen.
 - A **Pause for 2 minutes** button sits above it — see §5.2.1.
 - A foreground service keeps the session alive. Its notification shows remaining time
   and a Give Up action, and is non-dismissible while a session runs.
@@ -421,7 +436,15 @@ experiment, not a v1 feature — see §11.6.
   the session fails. This needs no permission and is enough for an honest user, which
   is the user Mintal is built for.
 - Layer B adds the allowlist: the grace period is skipped when the foreground app is
-  permitted, so checking a dictionary doesn't kill a session.
+  permitted, so checking a dictionary doesn't kill a session. **Layer B refines layer A;
+  it does not replace it.** With layer A off nothing counts as leaving, so Settings
+  disables the layer B switch while layer A is off and says why. It used to stay
+  switchable, and was tested on a device exactly that way — layer B on, layer A off,
+  another app opened, nothing happened — and reasonably read as broken.
+- **Layer B is off by default and stays that way.** Usage Access lets an app see every
+  other app you open; for a timer that promises minimum permissions that is a tracker,
+  and the owner chose to keep the default build to the permissions nobody can avoid. The
+  cost is stated plainly in the next point.
 - **Layer A cannot tell the home screen from another app, and does not pretend to.**
   Android tells Mintal that it lost the foreground and nothing about what took it, so
   standing on the home screen and scrolling a feed look identical and both start the
@@ -1379,6 +1402,14 @@ section it changed.
   period, so staying in one app cleared the countdown before it ran out. Found while
   answering a device report about the home screen, and fixed in the same change, because
   fixing the lookup alone would have made the home screen fail sessions under layer B.
+- **The tag can change during a session (§5.2), and nothing else can.** Asked as a
+  choice between this and letting the pause return to the hub to change anything. The tag
+  is the one setting that is only a label; the rest are what the session is, and the
+  planting window already exists for correcting them. The running screen's tag chip had
+  an empty click handler — drawn to be tapped, doing nothing — and is now the way in.
+- **The layer B switch is disabled while layer A is off (§5.3).** Tested on a device in
+  exactly that combination and reported as Usage Access not working, which, from the
+  screen, is what it looked like.
 - **The catalogue layout became a preference (§5.1, §7).** It was a `rememberSaveable`
   inside the screen, which survives rotation and is thrown away the moment the screen
   leaves the back stack — so choosing Cards lasted exactly until you went back to the

@@ -8,8 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +45,7 @@ import dev.nheox.mintal.domain.session.SessionResult
 import dev.nheox.mintal.domain.session.SessionRules
 import dev.nheox.mintal.ui.components.MintalTopBar
 import dev.nheox.mintal.ui.components.SpeciesEmblem
+import dev.nheox.mintal.ui.components.TagPickerDialog
 import dev.nheox.mintal.ui.components.SessionBar
 import dev.nheox.mintal.ui.theme.MintalTextStyles
 import kotlinx.coroutines.delay
@@ -58,6 +64,7 @@ fun SessionRunningScreen(
     val live by viewModel.live.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
     var showGiveUpDialog by remember { mutableStateOf(false) }
+    var showTagPicker by remember { mutableStateOf(false) }
     var legendIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -141,9 +148,19 @@ fun SessionRunningScreen(
                 inGracePeriod = running?.inGracePeriod == true,
             )
 
-            if (state.tagName != null) {
-                AssistChip(onClick = {}, label = { Text(text = state.tagName ?: "") })
-            }
+            // Always shown, so a session started untagged can still be given one. It used
+            // to be a chip with an empty onClick: drawn to be tapped and doing nothing.
+            AssistChip(
+                onClick = { showTagPicker = true },
+                label = { Text(text = state.tagName ?: "Add a tag") },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Change tag",
+                        modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    )
+                },
+            )
 
             val paused = running?.pauseRemainingSeconds
             if (paused != null) {
@@ -234,6 +251,21 @@ fun SessionRunningScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Give up") }
         }
+    }
+
+    if (showTagPicker) {
+        TagPickerDialog(
+            tags = state.tags,
+            onPick = { id ->
+                viewModel.setTag(id)
+                showTagPicker = false
+            },
+            onCreate = { name ->
+                viewModel.createTag(name)
+                showTagPicker = false
+            },
+            onDismiss = { showTagPicker = false },
+        )
     }
 
     if (showGiveUpDialog) {

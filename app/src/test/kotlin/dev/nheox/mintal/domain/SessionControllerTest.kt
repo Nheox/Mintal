@@ -386,6 +386,35 @@ class SessionControllerTest {
         }
 
     @Test
+    fun `the tag can change mid-session, and the row carries the new one`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", tagId = 1L)
+        clock.advanceSeconds(600)
+        controller.tick()
+        controller.setTag(2L)
+        controller.tick()
+
+        val running = controller.running.value
+        assertEquals(2L, running?.tagId)
+        assertEquals(600, running?.elapsedSeconds, "a label moves no clock")
+        assertEquals(25 * 60, running?.plannedSeconds)
+        assertEquals("spicata", running?.speciesId)
+
+        clock.advanceSeconds(25 * 60 - 600L)
+        controller.tick()
+        assertEquals(2L, store.recorded.single().tagId)
+    }
+
+    @Test
+    fun `a session started tagged can end untagged`() = runTest {
+        controller.start(SessionMode.COUNT_UP, 0, "spicata", tagId = 1L)
+        clock.advanceSeconds(120)
+        controller.setTag(null)
+        controller.stopCountUp()
+
+        assertNull(store.recorded.single().tagId)
+    }
+
+    @Test
     fun `giving up during a pause records only the focused time`() = runTest {
         controller.start(SessionMode.COUNT_UP, 0, "spicata", null)
         clock.advanceSeconds(600)
