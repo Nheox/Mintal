@@ -25,6 +25,17 @@ private val Context.mintalDataStore: DataStore<Preferences> by preferencesDataSt
 enum class ThemeChoice { SYSTEM, LIGHT, DARK }
 
 /**
+ * How the species catalogue is laid out: the scrolling list, or one mint at a time
+ * (spec §5.1).
+ *
+ * Here rather than in `ui/species/` because it is persisted, the way [ThemeChoice] is.
+ * Which layout someone reads the catalogue in is a preference about the app, not state
+ * belonging to one visit to the screen, and it was previously forgotten the moment the
+ * screen left the back stack.
+ */
+enum class SpeciesViewMode { LIST, CARDS }
+
+/**
  * Everything that is a preference rather than history (spec §7). Session rows live in
  * Room; this is the small mutable state around them.
  */
@@ -43,6 +54,7 @@ data class MintalSettings(
     val onboardingComplete: Boolean = false,
     val starterTagsSeeded: Boolean = false,
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
+    val speciesViewMode: SpeciesViewMode = SpeciesViewMode.LIST,
 )
 
 @Singleton
@@ -64,6 +76,7 @@ class MintalPreferences @Inject constructor(
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_complete")
         val STARTER_TAGS = booleanPreferencesKey("starter_tags_seeded")
         val THEME = stringPreferencesKey("theme")
+        val SPECIES_VIEW_MODE = stringPreferencesKey("species_view_mode")
     }
 
     val settings: Flow<MintalSettings> = context.mintalDataStore.data
@@ -89,6 +102,9 @@ class MintalPreferences @Inject constructor(
                 starterTagsSeeded = prefs[Keys.STARTER_TAGS] ?: false,
                 theme = runCatching { ThemeChoice.valueOf(prefs[Keys.THEME] ?: "") }
                     .getOrDefault(ThemeChoice.SYSTEM),
+                speciesViewMode = runCatching {
+                    SpeciesViewMode.valueOf(prefs[Keys.SPECIES_VIEW_MODE] ?: "")
+                }.getOrDefault(SpeciesViewMode.LIST),
             )
         }
 
@@ -121,6 +137,9 @@ class MintalPreferences @Inject constructor(
 
     suspend fun setTheme(theme: ThemeChoice) = edit { it[Keys.THEME] = theme.name }
 
+    suspend fun setSpeciesViewMode(mode: SpeciesViewMode) =
+        edit { it[Keys.SPECIES_VIEW_MODE] = mode.name }
+
     /** Used by backup restore, which replaces preferences wholesale (spec §7.1). */
     suspend fun replaceAll(settings: MintalSettings) = edit { prefs ->
         prefs[Keys.SELECTED_SPECIES] = settings.selectedSpeciesId
@@ -137,6 +156,7 @@ class MintalPreferences @Inject constructor(
         prefs[Keys.ONBOARDING_DONE] = settings.onboardingComplete
         prefs[Keys.STARTER_TAGS] = settings.starterTagsSeeded
         prefs[Keys.THEME] = settings.theme.name
+        prefs[Keys.SPECIES_VIEW_MODE] = settings.speciesViewMode.name
     }
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {

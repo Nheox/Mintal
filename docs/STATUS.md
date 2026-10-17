@@ -112,6 +112,11 @@ session should not quietly re-propose them.
   Coil, the SVG build step and the Apache CSV dependency are gone, and Robolectric is
   recorded as the way the UI is seen without a device.
 - **Merged to `main`.** `main` is at `ff1b43c` and carries everything.
+- **The species catalogue remembers its layout.** Choosing Cards used to last until the
+  screen left the back stack, because the layout was a `rememberSaveable` inside it. It is
+  a DataStore preference now, travels in backups, and has the first unit coverage any
+  preference in this project has had (`MintalPreferencesTest`). The enum moved from
+  `ui/species/` to `data/prefs/`, next to `ThemeChoice`, since it is persisted.
 
 ## Open decisions
 

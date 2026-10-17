@@ -11,6 +11,7 @@ import dev.nheox.mintal.data.db.entity.SpeciesEntity
 import dev.nheox.mintal.data.db.entity.TagEntity
 import dev.nheox.mintal.data.prefs.MintalPreferences
 import dev.nheox.mintal.data.prefs.MintalSettings
+import dev.nheox.mintal.data.prefs.SpeciesViewMode
 import dev.nheox.mintal.data.prefs.ThemeChoice
 import dev.nheox.mintal.data.repository.AllowlistRepository
 import dev.nheox.mintal.data.repository.SessionRepository
@@ -216,6 +217,7 @@ class BackupManager @Inject constructor(
         .put("onboardingComplete", onboardingComplete)
         .put("starterTagsSeeded", starterTagsSeeded)
         .put("theme", theme.name)
+        .put("speciesViewMode", speciesViewMode.name)
 
     private fun JSONObject.toSettings(): MintalSettings {
         val defaults = MintalSettings()
@@ -236,6 +238,10 @@ class BackupManager @Inject constructor(
             starterTagsSeeded = optBoolean("starterTagsSeeded", defaults.starterTagsSeeded),
             theme = runCatching { ThemeChoice.valueOf(optString("theme")) }
                 .getOrDefault(defaults.theme),
+            // Absent from backups written before the catalogue layout was remembered, so
+            // an older file restores to the default rather than failing.
+            speciesViewMode = runCatching { SpeciesViewMode.valueOf(optString("speciesViewMode")) }
+                .getOrDefault(defaults.speciesViewMode),
         )
     }
 

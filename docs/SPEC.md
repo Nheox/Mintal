@@ -312,7 +312,9 @@ does not pay, and no feature anywhere in the app is behind the card.
 3. Tapping the species chip opens the **Species catalogue** (The Herbarium in v2).
    Locked mints are visible but greyed, each showing the milestone that unlocks it.
    The catalogue offers a list or a one-mint-per-page card view, and an unspent
-   milestone slot can be spent from either (§6.1).
+   milestone slot can be spent from either (§6.1). **Which of the two layouts was last
+   used is remembered** (§7): someone who prefers the cards should not have to say so
+   on every visit.
 4. Tapping the tag chip opens the **Tag selector**: a searchable list of existing tags
    plus a "create tag" row. A session may have exactly one tag, or none.
    v2: if a preset is active, species/tag/duration pre-fill from it.
@@ -750,7 +752,8 @@ Consequences, each of which is tested:
 
 **Not in Room** (DataStore Preferences instead): selected species, theme, day start
 time, first weekday, detection-layer toggles, keep-screen-on, onboarding-completed
-flag, **whether failed sessions are drawn in the Grove** (§5.6), the set of
+flag, **whether failed sessions are drawn in the Grove** (§5.6), **which layout the
+species catalogue was last read in** (§5.1), the set of
 **dismissed permission notes** (§9, and it travels in backups), **active preset id**
 (v2, persisted so it survives app restarts), **cloud backup destination URI** (v2, a SAF
 persistable permission, not a credential).
@@ -1292,6 +1295,12 @@ section it changed.
   container has no `/dev/kvm`, so rendering real Compose to PNG on the JVM is the only way
   to see the UI before a phone does, and three visual bugs reached the owner's phone while
   that was being guessed at instead.
+
+- **The catalogue layout became a preference (§5.1, §7).** It was a `rememberSaveable`
+  inside the screen, which survives rotation and is thrown away the moment the screen
+  leaves the back stack — so choosing Cards lasted exactly until you went back to the
+  hub. Which layout someone reads a catalogue in is a statement about how they like to
+  read it, not state belonging to one visit.
 
 One thing is recorded as **deliberately rejected**, so it is not re-proposed: a floating
 overlay for the grace-period warning, which wanted `SYSTEM_ALERT_WINDOW` (§9.1).

@@ -3,11 +3,11 @@ package dev.nheox.mintal.screenshot
 import androidx.compose.runtime.Composable
 import dev.nheox.mintal.core.model.Species
 import dev.nheox.mintal.core.model.SpeciesStatus
+import dev.nheox.mintal.data.prefs.SpeciesViewMode
 import dev.nheox.mintal.data.prefs.ThemeChoice
 import dev.nheox.mintal.data.species.SpeciesCatalog
 import dev.nheox.mintal.ui.species.SpeciesContent
 import dev.nheox.mintal.ui.species.SpeciesUiState
-import dev.nheox.mintal.ui.species.SpeciesViewMode
 import dev.nheox.mintal.ui.theme.MintalTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
