@@ -1,0 +1,9 @@
+First public release.
+
+* Focus sessions that count down or up, from 5 minutes to 3 hours
+* The Grove: every finished session adds a node to a real mint
+* Twelve Mentha species, and you choose which to unlock at each milestone
+* A two-minute pause, with 30 seconds between pauses
+* Looking at the lock screen no longer fails a session
+* Change a session's tag while it runs
+* No internet permission, no account, no analytics

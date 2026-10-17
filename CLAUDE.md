@@ -82,6 +82,12 @@ statistics axes at the sizes that broke them).
 CI (`.github/workflows/build.yml`) runs the same thing plus `assembleRelease` and uploads
 both APKs. It takes ~6 minutes, so it is a safety net, not a gate — verify locally first.
 
+**The first full `test` run after a cloud session starts may fail every Robolectric test**
+with `UnsatisfiedLinkError` from `org.robolectric.nativeruntime` — screenshot tests and
+`LeafGeometryTest` alike, while the plain JVM tests pass. It has happened twice, a re-run
+passed both times with nothing changed, and CI has never shown it. Re-run before
+suspecting the diff.
+
 ## Looking at the UI without a device
 
 There is no emulator here and there cannot be: the container has no `/dev/kvm`. Instead
@@ -210,8 +216,18 @@ ui/        Compose: radial-hub home, session flow, grove, stats, tags, species, 
 ## Releasing
 
 `.github/workflows/release.yml` builds a signed APK and publishes a GitHub release when a
-`v*` tag is pushed. Shipping a version is: bump `versionCode` **and** `versionName` in
-`app/build.gradle.kts`, commit, `git tag v0.2.0`, `git push origin v0.2.0`.
+`v*` tag is pushed. Shipping a version is:
+
+1. bump `versionCode` **and** `versionName` in `app/build.gradle.kts`;
+2. write `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (500 characters
+   at most) — it is both F-Droid's "What's new" and the top of the GitHub release notes;
+3. get it onto `main`, and tag `main`: `git tag v0.3.0`, `git push origin v0.3.0`.
+
+Tag what is on `main`, not a branch. The first release nearly went out from a `main` that
+was a week behind the code the owner had been testing.
+
+F-Droid is not part of this loop once it has accepted the app: its recipe watches tags.
+How to get it accepted the first time is in `docs/FDROID.md`.
 
 - The signing key is the owner's, kept out of the repository, and reaches CI through four
   repository secrets (`MINTAL_KEYSTORE_BASE64`, `MINTAL_KEYSTORE_PASSWORD`,

@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-17, after folding the spec amendments into `docs/SPEC.md`.
+Last updated: 2026-10-17, after preparing the 0.2.0 release.
 
 ## Where the project stands
 
@@ -101,16 +101,31 @@ session should not quietly re-propose them.
 
 ## Needs the owner before release
 
-- **A pushed tag.** Everything else about releasing works. `versionName` is `0.1.0` and
-  the workflow refuses a tag that disagrees with it, so `git tag v0.1.0 && git push origin
-  v0.1.0` publishes the signed APK as a GitHub release with no version bump needed. Until
-  then there is nothing an `fdroiddata` recipe can point at (§10.2 of the spec).
+- **0.2.0 is prepared; publishing it is a merge and a tag.** `versionCode` 2,
+  `versionName` 0.2.0, "What's new" in `fastlane/metadata/android/en-US/changelogs/2.txt`.
+  The work has to reach `main` before it is tagged — tagging `main` as it stood would
+  publish the code of 15 October, without anything from the device rounds since. Then
+  `git tag v0.2.0` on `main` and `git push origin v0.2.0`; the workflow tests, signs,
+  verifies and publishes, with the changelog as the release notes.
+- **0.1.0 was never published.** A signed 0.1.0 (code 1) was built on 15 October by a
+  manual workflow run and only ever existed as an artifact. The first public release is
+  0.2.0 so that nothing can mistake one for the other.
 - **The donation address.** `ui/settings/Donation.URL` is an empty string. The owner has
   deferred this until there are testers to ask. Until it is filled in, the Settings card
   renders with its button disabled and says so. One line to change; no other code knows
   the URL.
 
 ## Done since the third device session
+
+- **Release paperwork for 0.2.0.** Version bumped; `changelogs/2.txt` written (F-Droid's
+  "What's new", 424 of 500 characters), and the release workflow now puts the same file at
+  the top of the GitHub release, so the two cannot disagree. `dependenciesInfo` is off in
+  `app/build.gradle.kts`: AGP otherwise writes the dependency list into the signing block
+  encrypted with a Google key, which F-Droid's scanner flags. The built release APK was
+  checked: version 0.2.0 (2), no `INTERNET`, the permissions the spec lists and no others.
+  `docs/FDROID.md` holds the `fdroiddata` recipe and both ways to submit it. The README
+  says how to move from a CI debug build to a release without losing the Grove; CREDITS
+  lists the two test dependencies it was missing.
 
 - **The spec is in the repository and the amendments are folded into it.** The owner
   supplied spec v0.3, and `docs/SPEC.md` is now v0.4: every amendment is merged into the
@@ -191,9 +206,12 @@ session should not quietly re-propose them.
    that needs a device: contrast at 4.5:1 in **both** palettes (light is the likelier to
    have a thin spot, having been retuned once for the card-separation bug), 48dp touch
    targets, and one TalkBack pass over hub → session → result → mint chooser.
-2. **Tag `v0.1.0`** and push it, which publishes the signed APK as a GitHub release.
-3. **The `fdroiddata` recipe** — a PR against F-Droid's own repository, not a commit here
-   (§10.2). Nothing blocks it except step 2.
+   0.2.0 goes out ahead of it, at the owner's call; the gate is still the gate.
+2. **Merge to `main` and tag `v0.2.0`** — see "Needs the owner before release".
+3. **F-Droid**, per `docs/FDROID.md`: screenshots from a phone into
+   `fastlane/metadata/android/en-US/images/phoneScreenshots/`, then either a Request For
+   Packaging issue (no git) or a merge request to `fdroiddata` with the recipe there.
+   Nothing blocks it except step 2.
 4. Fill in the donation URL, once there are testers to ask.
 5. Translation, if and when it is wanted.
 6. An illustrator, if the UdeC enquiry turns one up.
@@ -224,7 +242,8 @@ session should not quietly re-propose them.
 - The running screen, and so the pause button and its countdown, has no screenshot
   coverage: `SessionRunningScreen` calls `hiltViewModel()` itself. Extracting a
   `SessionRunningContent` the way `SpeciesContent` is would fix that.
-- Once, on the first cold run of a fresh session, every Robolectric test failed with
-  `UnsatisfiedLinkError` from `org.robolectric.nativeruntime` — the native graphics
-  library never loaded. Re-running passed, in isolation and in full, with no change.
-  Not seen in CI. If it recurs, the cause is the environment, not the test that names it.
+- Twice now, on the first full test run after a cloud session started, every Robolectric
+  test failed with `UnsatisfiedLinkError` from `org.robolectric.nativeruntime` — the
+  native graphics library never loaded. Both times a re-run passed with no change, and CI
+  has never shown it in 37 runs. It is this container, not the tests; `CLAUDE.md` says so
+  where the next session will look.

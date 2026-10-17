@@ -41,8 +41,18 @@ android {
         applicationId = "dev.nheox.mintal"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // 0.1.0 (code 1) was a signed build of 15 October that was never published. The
+        // first public release is 0.2.0 so nothing can mistake it for that one.
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    // AGP otherwise writes the dependency list into the APK signing block, encrypted with
+    // a key only Google can read. F-Droid's scanner flags it, and an app that promises to
+    // send nothing anywhere has no business carrying a payload its users cannot read.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     signingConfigs {
