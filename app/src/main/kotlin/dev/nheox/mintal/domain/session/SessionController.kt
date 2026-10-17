@@ -22,6 +22,9 @@ data class RunningSession(
     val startedAtMillis: Long,
     val elapsedSeconds: Int,
     val graceRemainingSeconds: Int?,
+    /** Seconds left of a pause, or null when the session is running normally. */
+    val pauseRemainingSeconds: Int? = null,
+    val pausesLeft: Int = SessionRules.PAUSES_PER_SESSION,
 ) {
     val remainingSeconds: Int
         get() = (plannedSeconds - elapsedSeconds).coerceAtLeast(0)
@@ -35,6 +38,10 @@ data class RunningSession(
         }
 
     val inGracePeriod: Boolean get() = graceRemainingSeconds != null
+
+    val isPaused: Boolean get() = pauseRemainingSeconds != null
+
+    val canPause: Boolean get() = !isPaused && pausesLeft > 0
 }
 
 /** What happened when a session ended, so the result screen can say it once. */
@@ -68,6 +75,9 @@ class SessionController @Inject constructor(
     private var startedAtElapsed = 0L
     private var graceStartedElapsed: Long? = null
     private var distracted = false
+    private var pausedAtElapsed: Long? = null
+    private var pausedTotalMillis = 0L
+    private var pausesUsed = 0
 
     private val _running = MutableStateFlow<RunningSession?>(null)
     val running: StateFlow<RunningSession?> = _running.asStateFlow()
@@ -82,6 +92,9 @@ class SessionController @Inject constructor(
         startedAtElapsed = clock.elapsedRealtimeMillis()
         graceStartedElapsed = null
         distracted = false
+        pausedAtElapsed = null
+        pausedTotalMillis = 0L
+        pausesUsed = 0
         _result.value = null
         _running.value = RunningSession(
             mode = mode,
@@ -105,6 +118,13 @@ class SessionController @Inject constructor(
             graceStartedElapsed = null
             return
         }
+        // Leaving the app during a pause is the entire point of a pause, so it is not a
+        // distraction and must not start the countdown that fails the session.
+        if (pausedAtElapsed != null) {
+            distracted = false
+            graceStartedElapsed = null
+            return
+        }
         if (value && !distracted) {
             graceStartedElapsed = clock.elapsedRealtimeMillis()
         } else if (!value) {
@@ -113,10 +133,61 @@ class SessionController @Inject constructor(
         distracted = value
     }
 
-    suspend fun tick() {
+    /**
+     * Stop the clock for [SessionRules.PAUSE_SECONDS] (spec §5.2.1). Paused time is not
+     * focus time: it is subtracted from the elapsed total, so a paused countdown ends
+     * later rather than finishing early.
+     */
+    fun pause() {
         val current = _running.value ?: return
+        if (pausedAtElapsed != null || pausesUsed >= SessionRules.PAUSES_PER_SESSION) return
+        pausesUsed += 1
+        pausedAtElapsed = clock.elapsedRealtimeMillis()
+        distracted = false
+        graceStartedElapsed = null
+        _running.value = current.copy(
+            graceRemainingSeconds = null,
+            pauseRemainingSeconds = SessionRules.PAUSE_SECONDS,
+            pausesLeft = SessionRules.PAUSES_PER_SESSION - pausesUsed,
+        )
+    }
+
+    /** Resume early, or automatically once the pause runs out. */
+    fun resume() {
+        val pausedAt = pausedAtElapsed ?: return
+        pausedTotalMillis += (clock.elapsedRealtimeMillis() - pausedAt).coerceAtLeast(0L)
+        pausedAtElapsed = null
+        // The user may still be outside the app at this moment. Starting them mid-grace
+        // would fail a session the very second its pause expired, so the next tick's
+        // setDistracted is what re-arms the countdown, from zero.
+        distracted = false
+        graceStartedElapsed = null
+        _running.value = _running.value?.copy(
+            graceRemainingSeconds = null,
+            pauseRemainingSeconds = null,
+        )
+    }
+
+    suspend fun tick() {
+        var current = _running.value ?: return
         val now = clock.elapsedRealtimeMillis()
-        val elapsed = ((now - startedAtElapsed) / 1000L).toInt().coerceAtLeast(0)
+
+        val pausedAt = pausedAtElapsed
+        if (pausedAt != null) {
+            val pausedFor = ((now - pausedAt) / 1000L).toInt()
+            if (pausedFor < SessionRules.PAUSE_SECONDS) {
+                _running.value = current.copy(
+                    elapsedSeconds = elapsedSecondsAt(now),
+                    graceRemainingSeconds = null,
+                    pauseRemainingSeconds = SessionRules.PAUSE_SECONDS - pausedFor,
+                )
+                return
+            }
+            resume()
+            current = _running.value ?: return
+        }
+
+        val elapsed = elapsedSecondsAt(now)
 
         val graceStart = graceStartedElapsed
         if (graceStart != null) {
@@ -141,6 +212,7 @@ class SessionController @Inject constructor(
             graceRemainingSeconds = graceStart?.let {
                 (SessionRules.GRACE_SECONDS - ((now - it) / 1000L).toInt()).coerceAtLeast(0)
             },
+            pauseRemainingSeconds = null,
         )
     }
 
@@ -161,14 +233,20 @@ class SessionController @Inject constructor(
         _result.value = null
     }
 
-    private fun elapsedSecondsNow(): Int =
-        ((clock.elapsedRealtimeMillis() - startedAtElapsed) / 1000L).toInt().coerceAtLeast(0)
+    private fun elapsedSecondsNow(): Int = elapsedSecondsAt(clock.elapsedRealtimeMillis())
+
+    /** Wall time since the session started, less whatever of it was spent paused. */
+    private fun elapsedSecondsAt(now: Long): Int {
+        val pausedSoFar = pausedTotalMillis + (pausedAtElapsed?.let { now - it } ?: 0L)
+        return ((now - startedAtElapsed - pausedSoFar) / 1000L).toInt().coerceAtLeast(0)
+    }
 
     private suspend fun finish(outcome: SessionOutcome, actualSeconds: Int) {
         finishLock.withLock {
             val current = _running.value ?: return
             distracted = false
             graceStartedElapsed = null
+            pausedAtElapsed = null
 
             if (current.mode == SessionMode.COUNT_UP &&
                 actualSeconds < SessionRules.COUNT_UP_MIN_SECONDS

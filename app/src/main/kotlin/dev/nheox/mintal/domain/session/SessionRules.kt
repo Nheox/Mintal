@@ -12,6 +12,19 @@ object SessionRules {
     const val GRACE_SECONDS = 15
 
     /**
+     * A session can be paused for this long (spec §5.2.1). While it is paused the clock
+     * is stopped and leaving the app does nothing at all — that is what the pause is for.
+     */
+    const val PAUSE_SECONDS = 120
+
+    /**
+     * How many times one session may be paused. One, deliberately: a pause that can be
+     * taken whenever makes the grace period of §5.3 optional, and with it the only rule
+     * the app actually has.
+     */
+    const val PAUSES_PER_SESSION = 1
+
+    /**
      * A session is armed, not started, for this long after START is pressed. Nothing is
      * written and no service runs during it, so backing out leaves no row, no plant and
      * no wilted stub — the point being that a mistyped duration or a wrong tag should not

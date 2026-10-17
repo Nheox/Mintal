@@ -112,6 +112,25 @@ session should not quietly re-propose them.
   Coil, the SVG build step and the Apache CSV dependency are gone, and Robolectric is
   recorded as the way the UI is seen without a device.
 - **Merged to `main`.** `main` is at `ff1b43c` and carries everything.
+- **The lock screen no longer fails a session.** Reported from a device: leaving the app
+  while counting up, then looking at the lock screen, failed the session. The spec has
+  said "screen-off never fails a session" since v0.3 and the code checked
+  `PowerManager.isInteractive`, which is false only while the device is *asleep* — the
+  keyguard is interactive, so a woken lock screen, an always-on display and lift-to-wake
+  all read as leaving the app. A locked device is now checked explicitly.
+- **The implicit allowlist covers the system surfaces.** SystemUI (lock screen, shade,
+  recents), telecom, settings, the keyboard in use, permission and installer dialogs, and
+  the clock app. The camera, browser, gallery and launcher are deliberately excluded —
+  opening one is a decision to go elsewhere. Note this list only takes effect when the
+  user has turned on detection layer B, which is off by default; the lock-screen fix above
+  is in layer A and applies to everyone.
+- **A two-minute pause.** One per session, clock stopped, leaving the app harmless while
+  it runs, auto-resuming when it expires. Paused time is subtracted from the session, so a
+  paused countdown ends later rather than early, and a pause expiring while the user is
+  still away restarts the grace period from zero rather than failing instantly. Seven new
+  tests in `SessionControllerTest`.
+- **The Give Up dialog stopped describing a wilted sprig in the Grove**, which failures
+  have not left by default since the third device round.
 - **The species catalogue remembers its layout.** Choosing Cards used to last until the
   screen left the back stack, because the layout was a `rememberSaveable` inside it. It is
   a DataStore preference now, travels in backups, and has the first unit coverage any

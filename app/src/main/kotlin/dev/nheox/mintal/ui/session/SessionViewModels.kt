@@ -229,6 +229,10 @@ class SessionRunningViewModel @Inject constructor(
     fun giveUp() = viewModelScope.launch { controller.giveUp() }
 
     fun stopCountUp() = viewModelScope.launch { controller.stopCountUp() }
+
+    fun pause() = controller.pause()
+
+    fun resume() = controller.resume()
 }
 
 data class ResultUiState(

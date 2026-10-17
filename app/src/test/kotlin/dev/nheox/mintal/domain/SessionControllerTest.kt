@@ -252,4 +252,112 @@ class SessionControllerTest {
         assertEquals(SessionOutcome.SUCCESS, store.recorded.single().outcome)
         assertEquals(25 * 60, store.recorded.single().actualSeconds)
     }
+
+    @Test
+    fun `a pause stops the clock, so the countdown ends later rather than early`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+        controller.tick()
+        assertNotNull(controller.running.value, "the pause ending must not end the session")
+        assertEquals(300, controller.running.value?.elapsedSeconds, "paused time is not focus time")
+
+        // The two paused minutes are owed back: the session still needs its full 25.
+        clock.advanceSeconds(25 * 60 - 300L)
+        controller.tick()
+        assertNull(controller.running.value)
+        assertEquals(25 * 60, store.recorded.single().actualSeconds)
+    }
+
+    @Test
+    fun `leaving the app while paused never starts the grace period`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+
+        controller.setDistracted(true)
+        clock.advanceSeconds(60)
+        controller.tick()
+
+        assertNotNull(controller.running.value, "a pause is for leaving the app")
+        assertNull(controller.running.value?.graceRemainingSeconds)
+        assertTrue(store.recorded.isEmpty())
+    }
+
+    @Test
+    fun `the pause counts down and ends by itself`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        assertEquals(SessionRules.PAUSE_SECONDS, controller.running.value?.pauseRemainingSeconds)
+
+        clock.advanceSeconds(SessionRules.PAUSE_SECONDS - 1L)
+        controller.tick()
+        assertEquals(1, controller.running.value?.pauseRemainingSeconds)
+
+        clock.advanceSeconds(1)
+        controller.tick()
+        assertNull(controller.running.value?.pauseRemainingSeconds, "the pause is over")
+        assertEquals(false, controller.running.value?.isPaused)
+    }
+
+    @Test
+    fun `resuming early only gives back the time actually paused`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        clock.advanceSeconds(300)
+        controller.pause()
+        clock.advanceSeconds(30)
+        controller.resume()
+        controller.tick()
+
+        assertEquals(300, controller.running.value?.elapsedSeconds)
+        assertNull(controller.running.value?.pauseRemainingSeconds)
+    }
+
+    @Test
+    fun `a session can be paused only once`() = runTest {
+        controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+        controller.pause()
+        assertEquals(0, controller.running.value?.pausesLeft)
+        controller.resume()
+        assertEquals(false, controller.running.value?.canPause)
+
+        controller.pause()
+        assertEquals(false, controller.running.value?.isPaused, "the second pause is refused")
+    }
+
+    @Test
+    fun `a pause expiring while still away gives a full grace period, not an instant failure`() =
+        runTest {
+            controller.start(SessionMode.COUNTDOWN, 25 * 60, "spicata", null)
+            clock.advanceSeconds(300)
+            controller.pause()
+            controller.setDistracted(true)
+
+            clock.advanceSeconds(SessionRules.PAUSE_SECONDS.toLong())
+            controller.tick()
+            assertNotNull(controller.running.value, "the pause running out must not fail it")
+
+            // The service reports the user is still away on the very next tick.
+            controller.setDistracted(true)
+            controller.tick()
+            assertEquals(SessionRules.GRACE_SECONDS, controller.running.value?.graceRemainingSeconds)
+
+            clock.advanceSeconds(SessionRules.GRACE_SECONDS.toLong())
+            controller.tick()
+            assertNull(controller.running.value)
+            assertEquals(SessionOutcome.LEFT_APP, store.recorded.single().outcome)
+        }
+
+    @Test
+    fun `giving up during a pause records only the focused time`() = runTest {
+        controller.start(SessionMode.COUNT_UP, 0, "spicata", null)
+        clock.advanceSeconds(600)
+        controller.pause()
+        clock.advanceSeconds(90)
+        controller.giveUp()
+
+        assertEquals(600, store.recorded.single().actualSeconds, "the 90 paused seconds are not focus")
+    }
 }

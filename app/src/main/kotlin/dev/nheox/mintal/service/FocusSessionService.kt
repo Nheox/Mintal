@@ -1,5 +1,6 @@
 package dev.nheox.mintal.service
 
+import android.app.KeyguardManager
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
@@ -13,6 +14,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -187,6 +189,7 @@ class FocusSessionService : Service() {
         if (!settings.detectLeavingApp) return false
         if (appInForeground) return false
         if (!isScreenOn()) return false
+        if (isDeviceLocked()) return false
         if (isInCall()) return false
         if (settings.detectForegroundApp && UsageAccess.isGranted(this)) {
             val foreground = currentForegroundPackage()
@@ -204,6 +207,21 @@ class FocusSessionService : Service() {
     private fun isScreenOn(): Boolean {
         val power = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
         return power.isInteractive
+    }
+
+    /**
+     * The lock screen is not another app.
+     *
+     * [PowerManager.isInteractive] is false only while the device is actually asleep, and
+     * the keyguard is emphatically interactive — so waking the phone to glance at the
+     * clock, an always-on display, and lift-to-wake all read as "the app lost the
+     * foreground" and failed the session. Nothing can be done on a locked phone except
+     * unlock it, so a locked device is never someone being distracted by something else.
+     */
+    private fun isDeviceLocked(): Boolean {
+        val keyguard = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+            ?: return false
+        return runCatching { keyguard.isKeyguardLocked }.getOrDefault(false)
     }
 
     private fun isInCall(): Boolean {
@@ -228,20 +246,54 @@ class FocusSessionService : Service() {
         return latest
     }
 
-    /** The system dialler and system settings are always permitted (spec §5.3). */
+    /**
+     * System surfaces that are always permitted (spec §5.3).
+     *
+     * The test is not "is this app harmless" but **did the user choose to go somewhere
+     * else**. The lock screen, the notification shade, the recents switcher and a
+     * permission dialog all appear over whatever you were doing, often without being
+     * asked for; the keyboard is part of using an app rather than leaving it; and a call
+     * or an alarm arrives on its own schedule. None of those is a decision to stop
+     * focusing, so none of them fails a session.
+     *
+     * The camera, the browser, the gallery and the launcher are deliberately **not** here.
+     * Opening one is a decision to go elsewhere, which is exactly what Mintal is for
+     * noticing — and the user who asked for this said so in the same breath.
+     */
     private fun resolveImplicitlyAllowedPackages(): Set<String> {
         val resolved = HashSet<String>()
         resolved += packageName
+
         val telecom = runCatching {
             (getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager)
                 ?.defaultDialerPackage
         }.getOrNull()
         if (!telecom.isNullOrBlank()) resolved += telecom
+
+        // Whichever keyboard is actually in use, rather than a guess at its name. The
+        // stored value is a ComponentName, so the package is everything before the slash.
+        val ime = runCatching {
+            Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                ?.substringBefore('/')
+        }.getOrNull()
+        if (!ime.isNullOrBlank()) resolved += ime
+
         resolved += listOf(
+            // The lock screen, the shade, recents, the power menu: one package, and the
+            // one that made leaving the app look like leaving the app.
+            "com.android.systemui",
             "com.android.settings",
             "com.android.phone",
+            "com.android.server.telecom",
             "com.android.dialer",
             "com.google.android.dialer",
+            // Permission and package dialogs, which Mintal itself can raise.
+            "com.android.permissioncontroller",
+            "com.google.android.permissioncontroller",
+            "com.android.packageinstaller",
+            // The clock app owns alarms and timers on most devices.
+            "com.android.deskclock",
+            "com.google.android.deskclock",
         )
         return resolved
     }

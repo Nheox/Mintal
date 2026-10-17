@@ -144,6 +144,31 @@ fun SessionRunningScreen(
                 AssistChip(onClick = {}, label = { Text(text = state.tagName ?: "") })
             }
 
+            val paused = running?.pauseRemainingSeconds
+            if (paused != null) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "Paused · ${MintalTime.formatClock(paused)} left",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = "The clock is stopped and leaving Mintal is safe. " +
+                                "The session carries on by itself when the pause runs out.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Button(
+                            onClick = { viewModel.resume() },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Resume now") }
+                    }
+                }
+            }
+
             val grace = running?.graceRemainingSeconds
             if (grace != null) {
                 Card(
@@ -185,6 +210,13 @@ fun SessionRunningScreen(
                 ) { Text("Stop and keep it") }
             }
 
+            if (running?.canPause == true) {
+                OutlinedButton(
+                    onClick = { viewModel.pause() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Pause for 2 minutes") }
+            }
+
             OutlinedButton(
                 onClick = { showGiveUpDialog = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -198,8 +230,9 @@ fun SessionRunningScreen(
             title = { Text("Give up this session?") },
             text = {
                 Text(
-                    "It will be recorded with the time you managed so far, and grafted onto " +
-                        "the Grove as a wilted sprig. No species is earned.",
+                    "It will be recorded with the time you managed so far, and counted in " +
+                        "your statistics. No node is added to your mint, and the time does " +
+                        "not go toward the next milestone.",
                 )
             },
             confirmButton = {

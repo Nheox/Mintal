@@ -365,9 +365,34 @@ and it is deliberately scoped to the hub.
   A cited claim that misreports its source is worse than no claim.
 - The tag is shown; a **Give Up** button is present, with a brief confirmation (this
   is the "warning before failure" principle 6 calls for) rather than an instant exit.
+- A **Pause for 2 minutes** button sits above it — see §5.2.1.
 - A foreground service keeps the session alive. Its notification shows remaining time
   and a Give Up action, and is non-dismissible while a session runs.
 - If "keep screen on" is enabled, a wake lock holds the screen awake.
+
+#### 5.2.1 The pause
+
+One session may be paused **once**, for **two minutes**. While it is paused:
+
+- the clock stops, and paused time is subtracted from the session's elapsed total, so a
+  paused 25-minute countdown ends two minutes later rather than two minutes short;
+- **leaving the app does nothing at all** — no grace period, no warning, no failure. That
+  is what the pause is for;
+- the notification says *Paused* and shows the time left, because a clock that has
+  silently stopped reads as a broken session rather than a paused one;
+- it ends by itself when the two minutes are up, or earlier via **Resume now**.
+
+When a pause expires while the user is still outside the app, the grace period of §5.3
+starts again **from zero** rather than resuming mid-count. Failing a session in the same
+instant its pause ran out would be the cruellest possible reading of the rule.
+
+**Once per session is deliberate**, and it is the whole design of this feature. A pause
+that can be taken whenever makes §5.3 optional, and §5.3 is the only rule Mintal has;
+one pause is enough to answer a door or take a call the dialler exemption does not cover,
+and not enough to use the phone through a session.
+
+Paused time is not focus time. It does not count toward the session, toward statistics,
+or toward a milestone, and giving up during a pause records only the focused seconds.
 
 ### 5.3 Distraction handling
 
@@ -391,9 +416,24 @@ experiment, not a v1 feature — see §11.6.
 - Layer B adds the allowlist: the grace period is skipped when the foreground app is
   permitted, so checking a dictionary doesn't kill a session.
 - Incoming phone calls never fail a session.
-- Screen-off never fails a session.
-- The allowlist is user-editable and starts empty; the system dialler and system
-  settings are always implicitly permitted.
+- **Screen-off never fails a session, and neither does the lock screen.** These are two
+  different states and conflating them was a real bug: `PowerManager.isInteractive` is
+  false only while the device is genuinely asleep, and the keyguard is emphatically
+  interactive. Waking the phone to glance at the time, an always-on display and
+  lift-to-wake therefore all read as "the app lost the foreground", and failed the
+  session for looking at a lock screen. A locked device is checked explicitly now:
+  nothing can be done on one except unlock it, so it is never someone being distracted
+  by something else.
+- The allowlist is user-editable and starts empty. A set of **system surfaces is always
+  implicitly permitted**, and the test for membership is not "is this app harmless" but
+  **did the user choose to go somewhere else**: the lock screen and the rest of SystemUI
+  (the notification shade, recents, the power menu), the default dialler and telecom,
+  system settings, the keyboard actually in use, permission and installer dialogs, and
+  the clock app that owns alarms. Each of those appears over what you were doing, often
+  without being asked for, or is part of using an app rather than leaving it.
+- The camera, the browser, the gallery and the launcher are deliberately **not** on that
+  list. Opening one is a decision to go elsewhere, which is the decision Mintal exists to
+  notice. Anything a particular person wants exempted goes in their own allowlist.
 
 **The warning is a second notification on a second channel, and has to be.** The
 running-session notification is deliberately `IMPORTANCE_LOW` and silent, which is right
@@ -593,6 +633,7 @@ x axis.
 | Default duration | 25 min |
 | Planting window after START | 5 s, cancellable, nothing written (§5.1.1) |
 | Grace period after leaving | 15 s, with a visible warning |
+| Pause | 2 min, once per session, clock stopped (§5.2.1) |
 | Nodes earned per successful session | 1, whatever its length (§5.6) |
 | Plant maturity | 12 nodes, then a new plant beside it (§5.6) |
 | Session rating | 1–5, optional, editable later |
@@ -1296,6 +1337,19 @@ section it changed.
   to see the UI before a phone does, and three visual bugs reached the owner's phone while
   that was being guessed at instead.
 
+- **A locked phone stopped failing sessions (§5.3).** v0.3 said screen-off never fails a
+  session and the code honoured it with `isInteractive`, which is false only while the
+  device is asleep — so the rule held for a dark screen and broke for the lock screen,
+  which is the state a phone is actually in when you glance at it. Reported from a device
+  as "just viewing the lock screen kills the plant", which is exactly what it did.
+- **The implicit allowlist grew to the system surfaces (§5.3).** Two names on a list was
+  too literal a reading of "the system dialler and system settings". The principle it was
+  reaching for is that a surface which appears *over* your work, unbidden, is not a
+  decision to stop working — and that principle also says the camera stays off the list.
+- **A two-minute pause (§5.2.1).** The honest gap in §5.3: everything it exempts is
+  something happening *to* the user — a call, an alarm, a dark screen — and nothing
+  covers simply needing two minutes. Give Up was the only exit, and it costs the session.
+  Once per session is what keeps it from undoing §5.3 altogether.
 - **The catalogue layout became a preference (§5.1, §7).** It was a `rememberSaveable`
   inside the screen, which survives rotation and is thrown away the moment the screen
   leaves the back stack — so choosing Cards lasted exactly until you went back to the
